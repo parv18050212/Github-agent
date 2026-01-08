@@ -55,7 +55,7 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
         width={config.width}
         height={config.width / 2 + config.strokeWidth}
         className="overflow-visible"
-        style={{ filter: getGlowColor(score) }}
+        style={{ filter: getGlowColor(animatedScore) }}
       >
         <defs>
           <linearGradient id="gaugeGradientExcellent" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -91,7 +91,7 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
           d={`M ${config.strokeWidth / 2} ${config.width / 2}
               A ${radius} ${radius} 0 0 1 ${config.width - config.strokeWidth / 2} ${config.width / 2}`}
           fill="none"
-          stroke={getScoreGradient(score)}
+          stroke={getScoreGradient(animatedScore)}
           strokeWidth={config.strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -105,7 +105,7 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
         className={cn(
           "absolute font-bold tabular-nums transition-all duration-500",
           config.fontSize,
-          getScoreColor(score)
+          getScoreColor(animatedScore)
         )}
         style={{ top: `${config.width / 2 - 8}px` }}
       >
