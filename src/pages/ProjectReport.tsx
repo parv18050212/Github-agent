@@ -91,8 +91,8 @@ export default function ProjectReport() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-              <div className="col-span-2 md:col-span-1 lg:col-span-1 flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+              <div className="col-span-2 md:col-span-3 lg:col-span-2 flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                 <GaugeScore score={project.totalScore} size="lg" label="Total Score" />
               </div>
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 interface GaugeScoreProps {
   score: number;
@@ -11,11 +11,15 @@ interface GaugeScoreProps {
 
 export function GaugeScore({ score, size = "md", label, showLabel = true, className }: GaugeScoreProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
+  const uid = useId();
+
+  // Clamp score to 0-100
+  const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimatedScore(score), 100);
+    const timer = setTimeout(() => setAnimatedScore(clampedScore), 100);
     return () => clearTimeout(timer);
-  }, [score]);
+  }, [clampedScore]);
 
   const sizeConfig = {
     sm: { width: 80, strokeWidth: 8, fontSize: "text-lg", labelSize: "text-xs" },
@@ -29,10 +33,10 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
   const offset = circumference - (animatedScore / 100) * circumference;
 
   const getScoreGradient = (score: number) => {
-    if (score >= 80) return "url(#gaugeGradientExcellent)";
-    if (score >= 60) return "url(#gaugeGradientGood)";
-    if (score >= 40) return "url(#gaugeGradientAverage)";
-    return "url(#gaugeGradientPoor)";
+    if (score >= 80) return `url(#${uid}-excellent)`;
+    if (score >= 60) return `url(#${uid}-good)`;
+    if (score >= 40) return `url(#${uid}-average)`;
+    return `url(#${uid}-poor)`;
   };
 
   const getGlowColor = (score: number) => {
@@ -58,19 +62,19 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
         style={{ filter: getGlowColor(animatedScore) }}
       >
         <defs>
-          <linearGradient id="gaugeGradientExcellent" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={`${uid}-excellent`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--score-good))" />
             <stop offset="100%" stopColor="hsl(var(--score-excellent))" />
           </linearGradient>
-          <linearGradient id="gaugeGradientGood" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={`${uid}-good`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--score-average))" />
             <stop offset="100%" stopColor="hsl(var(--score-good))" />
           </linearGradient>
-          <linearGradient id="gaugeGradientAverage" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={`${uid}-average`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--score-poor))" />
             <stop offset="100%" stopColor="hsl(var(--score-average))" />
           </linearGradient>
-          <linearGradient id="gaugeGradientPoor" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={`${uid}-poor`} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--destructive))" />
             <stop offset="100%" stopColor="hsl(var(--score-poor))" />
           </linearGradient>
