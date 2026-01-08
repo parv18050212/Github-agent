@@ -1,12 +1,13 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Search, ArrowUpDown, ExternalLink, Filter } from "lucide-react";
+import { Search, ArrowUpDown, ExternalLink, Filter, Trophy, TrendingUp, Shield, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TechBadge } from "@/components/TechBadge";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { getLeaderboard, getScoreColor, getScoreBgColor } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from "recharts";
@@ -81,51 +82,77 @@ export default function Leaderboard() {
     }
   };
 
+  const highestScore = projects[0]?.totalScore || 0;
+  const averageScore = Math.round(projects.reduce((a, p) => a + p.totalScore, 0) / projects.length);
+  const totalSecurityIssues = projects.reduce((a, p) => a + p.securityIssues.length, 0);
+
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Rankings of all evaluated hackathon projects
-        </p>
+      <div className="flex items-center gap-3">
+        <Trophy className="h-8 w-8 text-warning" />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Rankings of all evaluated hackathon projects
+          </p>
+        </div>
       </div>
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="card-hover glass-card">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{projects.length}</div>
-            <div className="text-sm text-muted-foreground">Total Projects</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-score-excellent">{projects[0]?.totalScore || 0}</div>
-            <div className="text-sm text-muted-foreground">Highest Score</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {Math.round(projects.reduce((a, p) => a + p.totalScore, 0) / projects.length)}
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Total Projects</span>
             </div>
-            <div className="text-sm text-muted-foreground">Average Score</div>
+            <div className="text-3xl font-bold">
+              <AnimatedNumber value={projects.length} />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover glass-card">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-destructive">
-              {projects.reduce((a, p) => a + p.securityIssues.length, 0)}
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="h-4 w-4 text-warning" />
+              <span className="text-sm text-muted-foreground">Highest Score</span>
             </div>
-            <div className="text-sm text-muted-foreground">Security Issues</div>
+            <div className="text-3xl font-bold text-score-excellent">
+              <AnimatedNumber value={highestScore} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover glass-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-info" />
+              <span className="text-sm text-muted-foreground">Average Score</span>
+            </div>
+            <div className="text-3xl font-bold">
+              <AnimatedNumber value={averageScore} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover glass-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-destructive" />
+              <span className="text-sm text-muted-foreground">Security Issues</span>
+            </div>
+            <div className="text-3xl font-bold text-destructive">
+              <AnimatedNumber value={totalSecurityIssues} />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Chart - Top 5 Comparison */}
-      <Card>
+      <Card className="glass-card overflow-hidden">
         <CardHeader>
-          <CardTitle>Top 5 Score Comparison</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            Top 5 Score Comparison
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -156,7 +183,7 @@ export default function Leaderboard() {
                       dataKey={project.teamName}
                       stroke={colors[index]}
                       fill={colors[index]}
-                      fillOpacity={0.1}
+                      fillOpacity={0.15}
                       strokeWidth={2}
                     />
                   );
@@ -169,7 +196,7 @@ export default function Leaderboard() {
       </Card>
 
       {/* Filters */}
-      <Card>
+      <Card className="glass-card">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -178,11 +205,11 @@ export default function Leaderboard() {
                 placeholder="Search teams or technologies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-background/50"
               />
             </div>
             <Select value={techFilter} onValueChange={setTechFilter}>
-              <SelectTrigger className="w-full md:w-48">
+              <SelectTrigger className="w-full md:w-48 bg-background/50">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by tech" />
               </SelectTrigger>
@@ -198,11 +225,11 @@ export default function Leaderboard() {
       </Card>
 
       {/* Rankings Table */}
-      <Card>
+      <Card className="glass-card overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="w-16">Rank</TableHead>
                 <TableHead>Team</TableHead>
                 <TableHead>Tech Stack</TableHead>
@@ -210,7 +237,7 @@ export default function Leaderboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 -ml-3"
+                    className="gap-1 -ml-3 hover:bg-primary/10"
                     onClick={() => toggleSort("totalScore")}
                   >
                     Total
@@ -221,7 +248,7 @@ export default function Leaderboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 -ml-3"
+                    className="gap-1 -ml-3 hover:bg-primary/10"
                     onClick={() => toggleSort("qualityScore")}
                   >
                     Quality
@@ -232,7 +259,7 @@ export default function Leaderboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 -ml-3"
+                    className="gap-1 -ml-3 hover:bg-primary/10"
                     onClick={() => toggleSort("securityScore")}
                   >
                     Security
@@ -243,7 +270,7 @@ export default function Leaderboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 -ml-3"
+                    className="gap-1 -ml-3 hover:bg-primary/10"
                     onClick={() => toggleSort("originalityScore")}
                   >
                     Originality
@@ -255,13 +282,17 @@ export default function Leaderboard() {
             </TableHeader>
             <TableBody>
               {filteredProjects.map((project, index) => (
-                <TableRow key={project.id} className="hover:bg-muted/50">
+                <TableRow 
+                  key={project.id} 
+                  className="hover:bg-muted/30 transition-colors stagger-item"
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
                   <TableCell>
                     <div className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
-                      index === 0 && "bg-warning/20 text-warning",
-                      index === 1 && "bg-muted text-muted-foreground",
-                      index === 2 && "bg-warning/10 text-warning/80",
+                      "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold",
+                      index === 0 && "rank-gold",
+                      index === 1 && "rank-silver",
+                      index === 2 && "rank-bronze",
                       index > 2 && "bg-secondary text-secondary-foreground"
                     )}>
                       {index + 1}
@@ -281,7 +312,7 @@ export default function Leaderboard() {
                         <TechBadge key={tech} tech={tech} className="text-xs" />
                       ))}
                       {project.techStack.length > 3 && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
                           +{project.techStack.length - 3}
                         </span>
                       )}
@@ -289,28 +320,28 @@ export default function Leaderboard() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={cn("font-bold", getScoreColor(project.totalScore))}>
+                      <span className={cn("font-bold tabular-nums", getScoreColor(project.totalScore))}>
                         {project.totalScore}
                       </span>
                       <div className="h-2 w-16 overflow-hidden rounded-full bg-secondary hidden lg:block">
                         <div
-                          className={cn("h-full rounded-full", getScoreBgColor(project.totalScore))}
+                          className={cn("h-full rounded-full transition-all duration-500", getScoreBgColor(project.totalScore))}
                           style={{ width: `${project.totalScore}%` }}
                         />
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className={getScoreColor(project.qualityScore)}>
+                  <TableCell className={cn("tabular-nums", getScoreColor(project.qualityScore))}>
                     {project.qualityScore}
                   </TableCell>
-                  <TableCell className={getScoreColor(project.securityScore)}>
+                  <TableCell className={cn("tabular-nums", getScoreColor(project.securityScore))}>
                     {project.securityScore}
                   </TableCell>
-                  <TableCell className={getScoreColor(project.originalityScore)}>
+                  <TableCell className={cn("tabular-nums", getScoreColor(project.originalityScore))}>
                     {project.originalityScore}
                   </TableCell>
                   <TableCell>
-                    <Button asChild variant="ghost" size="icon">
+                    <Button asChild variant="ghost" size="icon" className="hover:bg-primary/10">
                       <Link to={`/project/${project.id}`}>
                         <ExternalLink className="h-4 w-4" />
                       </Link>

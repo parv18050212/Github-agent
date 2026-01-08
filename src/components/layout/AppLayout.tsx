@@ -49,7 +49,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-auto bg-background">
+          <main className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-muted/20">
             {children}
           </main>
         </SidebarInset>
