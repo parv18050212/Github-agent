@@ -1,24 +1,49 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Download, Shield, GitBranch, Users, FileCode, AlertTriangle, CheckCircle, Cpu, Clock, Star, Sparkles } from "lucide-react";
+import { ArrowLeft, ExternalLink, Download, Shield, GitBranch, Users, FileCode, AlertTriangle, CheckCircle, Cpu, Clock, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GaugeScore } from "@/components/GaugeScore";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { TechBadge } from "@/components/TechBadge";
-import { getProjectById, getSeverityColor, getScoreColor } from "@/lib/mockData";
+import { useProjectDetails } from "@/hooks/api";
+import { getSeverityColor, getScoreColor } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 export default function ProjectReport() {
   const { id } = useParams<{ id: string }>();
-  const project = getProjectById(id || "");
+  const { data: project, isLoading, error } = useProjectDetails(id);
 
   const handleExportPDF = () => {
     window.print();
   };
 
-  if (!project) {
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/leaderboard">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <Card className="glass-card">
+          <CardContent className="p-12 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !project) {
     return (
       <div className="p-6">
         <div className="text-center py-12">
@@ -388,30 +413,28 @@ export default function ProjectReport() {
                     <span className={cn(
                       "font-bold text-xl",
                       project.aiGeneratedPercentage > 40 ? "text-warning" : 
-                      project.aiGeneratedPercentage > 20 ? "text-muted-foreground" : "text-success"
+                      project.aiGeneratedPercentage > 20 ? "text-info" : "text-success"
                     )}>
-                      <AnimatedNumber value={project.aiGeneratedPercentage} suffix="%" />
+                      {project.aiGeneratedPercentage}%
                     </span>
                   </div>
-                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
                     <div 
                       className={cn(
                         "h-full rounded-full transition-all duration-1000",
-                        project.aiGeneratedPercentage > 40 ? "bg-gradient-to-r from-warning to-warning/70" :
-                        project.aiGeneratedPercentage > 20 ? "bg-gradient-to-r from-muted-foreground to-muted-foreground/70" :
-                        "bg-gradient-to-r from-success to-success/70"
+                        project.aiGeneratedPercentage > 40 ? "bg-warning" : 
+                        project.aiGeneratedPercentage > 20 ? "bg-info" : "bg-success"
                       )}
                       style={{ width: `${project.aiGeneratedPercentage}%` }}
                     />
                   </div>
                 </div>
-                <Separator />
-                <div className="p-4 rounded-xl bg-muted/30 border-l-4 border-primary">
-                  <span className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    AI Verdict
-                  </span>
-                  <p className="text-sm text-muted-foreground italic">&ldquo;{project.aiVerdict}&rdquo;</p>
+                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cpu className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Verdict</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{project.aiVerdict}</p>
                 </div>
               </CardContent>
             </Card>
@@ -422,16 +445,22 @@ export default function ProjectReport() {
                 <CardTitle>Score Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {scoreBreakdown.map((item) => (
-                    <div key={item.name} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>{item.name}</span>
-                        <span className={cn("font-bold", getScoreColor(item.score))}>{item.score}</span>
+                    <div key={item.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{item.name}</span>
+                        <span className={cn("font-bold", getScoreColor(item.score))}>
+                          {item.score}/100
+                        </span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                        <div 
+                          className={cn(
+                            "h-full rounded-full transition-all duration-1000",
+                            item.score >= 80 ? "bg-success" :
+                            item.score >= 60 ? "bg-warning" : "bg-destructive"
+                          )}
                           style={{ width: `${item.score}%` }}
                         />
                       </div>
@@ -441,43 +470,42 @@ export default function ProjectReport() {
               </CardContent>
             </Card>
 
-            {/* Strengths & Improvements */}
+            {/* Recommendations */}
             <Card className="card-hover glass-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-warning" />
-                  Recommendations
-                </CardTitle>
+                <CardTitle>Recommendations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 rounded-xl bg-success/5 border border-success/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="h-4 w-4 text-success" />
-                    <span className="font-medium text-success">Strengths</span>
+                {project.strengths.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-success mb-2 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-1">
+                      {project.strengths.map((strength, i) => (
+                        <li key={i} className="text-sm text-muted-foreground pl-6 relative before:content-['•'] before:absolute before:left-2 before:text-success">
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    {project.strengths.map((s, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-success mt-1">•</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <span className="font-medium text-warning">Areas for Improvement</span>
+                )}
+                {project.improvements.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-warning mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Areas for Improvement
+                    </h4>
+                    <ul className="space-y-1">
+                      {project.improvements.map((improvement, i) => (
+                        <li key={i} className="text-sm text-muted-foreground pl-6 relative before:content-['•'] before:absolute before:left-2 before:text-warning">
+                          {improvement}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    {project.improvements.map((s, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-warning mt-1">•</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

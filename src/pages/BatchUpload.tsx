@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useBatchUpload, useBatchStatus } from "@/hooks/api";
 
 interface TeamEntry {
   id: string;
@@ -12,22 +13,33 @@ interface TeamEntry {
   repoUrl: string;
   status: "pending" | "processing" | "completed" | "failed";
   score?: number;
+  projectId?: string;
+  error?: string;
 }
-
-const mockParsedTeams: TeamEntry[] = [
-  { id: "1", teamName: "Team Alpha", repoUrl: "https://github.com/alpha/project", status: "pending" },
-  { id: "2", teamName: "Team Beta", repoUrl: "https://github.com/beta/hackathon", status: "pending" },
-  { id: "3", teamName: "Team Gamma", repoUrl: "https://github.com/gamma/submission", status: "pending" },
-  { id: "4", teamName: "Team Delta", repoUrl: "https://github.com/delta/app", status: "pending" },
-  { id: "5", teamName: "Team Epsilon", repoUrl: "https://github.com/epsilon/code", status: "pending" },
-];
 
 export default function BatchUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [teams, setTeams] = useState<TeamEntry[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [batchId, setBatchId] = useState<string | null>(null);
+
+  const batchUploadMutation = useBatchUpload();
+  const { data: batchStatus } = useBatchStatus(batchId);
+
+  // Update teams when batch status changes
+  useEffect(() => {
+    if (batchStatus?.results) {
+      setTeams(batchStatus.results.map((r, idx) => ({
+        id: String(idx + 1),
+        teamName: r.teamName,
+        repoUrl: r.repoUrl,
+        status: r.status,
+        score: r.score,
+        projectId: r.projectId,
+        error: r.error,
+      })));
+    }
+  }, [batchStatus]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -39,63 +51,49 @@ export default function BatchUpload() {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     
     const file = e.dataTransfer.files[0];
     if (file && (file.name.endsWith(".csv") || file.name.endsWith(".xlsx"))) {
-      setUploadedFile(file);
-      // Simulate parsing
-      setTeams(mockParsedTeams);
+      await uploadFile(file);
     }
   }, []);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
-      // Simulate parsing
-      setTeams(mockParsedTeams);
+      await uploadFile(file);
     }
   };
 
-  const startBatchAnalysis = async () => {
-    setIsProcessing(true);
-    setProgress(0);
-
-    for (let i = 0; i < teams.length; i++) {
-      setTeams((prev) =>
-        prev.map((t, idx) =>
-          idx === i ? { ...t, status: "processing" } : t
-        )
-      );
-
-      await new Promise((r) => setTimeout(r, 1500));
-
-      const success = Math.random() > 0.1;
-      const score = success ? Math.floor(Math.random() * 30) + 70 : undefined;
-
-      setTeams((prev) =>
-        prev.map((t, idx) =>
-          idx === i
-            ? { ...t, status: success ? "completed" : "failed", score }
-            : t
-        )
-      );
-
-      setProgress(((i + 1) / teams.length) * 100);
+  const uploadFile = async (file: File) => {
+    setUploadedFile(file);
+    try {
+      const result = await batchUploadMutation.mutateAsync(file);
+      setBatchId(result.batchId);
+      // Initialize teams with pending status
+      setTeams(Array.from({ length: result.totalTeams }, (_, i) => ({
+        id: String(i + 1),
+        teamName: `Team ${i + 1}`,
+        repoUrl: "Loading...",
+        status: "pending",
+      })));
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setUploadedFile(null);
     }
-
-    setIsProcessing(false);
   };
 
   const clearAll = () => {
     setUploadedFile(null);
     setTeams([]);
-    setProgress(0);
+    setBatchId(null);
   };
 
+  const isProcessing = batchStatus?.status === "processing";
+  const progress = batchStatus?.progress || 0;
   const completedCount = teams.filter((t) => t.status === "completed").length;
   const failedCount = teams.filter((t) => t.status === "failed").length;
 
@@ -122,9 +120,13 @@ export default function BatchUpload() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              {batchUploadMutation.isPending ? (
+                <Loader2 className="h-12 w-12 mx-auto text-primary mb-4 animate-spin" />
+              ) : (
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              )}
               <h3 className="text-lg font-semibold mb-2">
-                Drop your file here or click to upload
+                {batchUploadMutation.isPending ? "Uploading..." : "Drop your file here or click to upload"}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Supports CSV and Excel files (.csv, .xlsx)
@@ -135,8 +137,9 @@ export default function BatchUpload() {
                 onChange={handleFileInput}
                 className="hidden"
                 id="file-upload"
+                disabled={batchUploadMutation.isPending}
               />
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" disabled={batchUploadMutation.isPending}>
                 <label htmlFor="file-upload" className="cursor-pointer">
                   Select File
                 </label>
@@ -159,7 +162,7 @@ export default function BatchUpload() {
                   </CardDescription>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={clearAll}>
+              <Button variant="ghost" size="icon" onClick={clearAll} disabled={isProcessing}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -192,13 +195,7 @@ export default function BatchUpload() {
             <div className="flex items-center justify-between">
               <CardTitle>Teams</CardTitle>
               <div className="flex gap-2">
-                {!isProcessing && completedCount === 0 && (
-                  <Button onClick={startBatchAnalysis} className="gap-2">
-                    <Loader2 className="h-4 w-4" />
-                    Start Analysis
-                  </Button>
-                )}
-                {completedCount > 0 && !isProcessing && (
+                {batchStatus?.status === "completed" && (
                   <Button variant="outline" className="gap-2">
                     <Download className="h-4 w-4" />
                     Export Results

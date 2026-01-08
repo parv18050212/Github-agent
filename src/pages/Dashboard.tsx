@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Search, Upload, Trophy, Shield, GitBranch, Cpu, FileCode, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Search, Upload, Trophy, Shield, GitBranch, Cpu, FileCode, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockProjects, getLeaderboard } from "@/lib/mockData";
 import { TechBadge } from "@/components/TechBadge";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useStats, useLeaderboard } from "@/hooks/api";
 import { getScoreColor, getScoreBgColor } from "@/lib/mockData";
 
 const features = [
@@ -40,12 +41,13 @@ const features = [
 ];
 
 export default function Dashboard() {
-  const leaderboard = getLeaderboard().slice(0, 5);
-  const totalProjects = mockProjects.length;
-  const averageScore = Math.round(
-    mockProjects.reduce((acc, p) => acc + p.totalScore, 0) / totalProjects
-  );
-  const totalSecurityIssues = mockProjects.reduce((acc, p) => acc + p.securityIssues.length, 0);
+  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: leaderboardData, isLoading: leaderboardLoading } = useLeaderboard({ limit: 5 });
+
+  const leaderboard = leaderboardData || [];
+  const totalProjects = stats?.totalProjects || 0;
+  const averageScore = stats?.averageScore || 0;
+  const totalSecurityIssues = stats?.totalSecurityIssues || 0;
 
   return (
     <div className="p-6 space-y-8">
@@ -99,9 +101,13 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-foreground">
-              <AnimatedNumber value={totalProjects} />
-            </div>
+            {statsLoading ? (
+              <Skeleton className="h-10 w-16" />
+            ) : (
+              <div className="text-4xl font-bold text-foreground">
+                <AnimatedNumber value={totalProjects} />
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card className="card-hover glass-card score-card group">
@@ -112,9 +118,13 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-4xl font-bold", getScoreColor(averageScore))}>
-              <AnimatedNumber value={averageScore} suffix="/100" />
-            </div>
+            {statsLoading ? (
+              <Skeleton className="h-10 w-24" />
+            ) : (
+              <div className={cn("text-4xl font-bold", getScoreColor(averageScore))}>
+                <AnimatedNumber value={Math.round(averageScore)} suffix="/100" />
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card className="card-hover glass-card score-card group">
@@ -125,9 +135,13 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-destructive">
-              <AnimatedNumber value={totalSecurityIssues} />
-            </div>
+            {statsLoading ? (
+              <Skeleton className="h-10 w-12" />
+            ) : (
+              <div className="text-4xl font-bold text-destructive">
+                <AnimatedNumber value={totalSecurityIssues} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>
@@ -212,49 +226,59 @@ export default function Dashboard() {
         </div>
         <Card className="glass-card overflow-hidden">
           <CardContent className="p-0">
-            <div className="divide-y divide-border/50">
-              {leaderboard.map((project, index) => (
-                <Link
-                  key={project.id}
-                  to={`/project/${project.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-muted/50 transition-all group stagger-item"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-transform group-hover:scale-110",
-                      index === 0 && "rank-gold",
-                      index === 1 && "rank-silver",
-                      index === 2 && "rank-bronze",
-                      index > 2 && "bg-secondary text-secondary-foreground"
-                    )}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium text-foreground group-hover:text-primary transition-colors">
-                        {project.teamName}
+            {leaderboardLoading ? (
+              <div className="p-8 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                No projects evaluated yet
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {leaderboard.map((project, index) => (
+                  <Link
+                    key={project.id}
+                    to={`/project/${project.id}`}
+                    className="flex items-center justify-between p-4 hover:bg-muted/50 transition-all group stagger-item"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-transform group-hover:scale-110",
+                        index === 0 && "rank-gold",
+                        index === 1 && "rank-silver",
+                        index === 2 && "rank-bronze",
+                        index > 2 && "bg-secondary text-secondary-foreground"
+                      )}>
+                        {index + 1}
                       </div>
-                      <div className="flex gap-1 mt-1">
-                        {project.techStack.slice(0, 3).map((tech) => (
-                          <TechBadge key={tech} tech={tech} className="text-xs" />
-                        ))}
+                      <div>
+                        <div className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {project.teamName}
+                        </div>
+                        <div className="flex gap-1 mt-1">
+                          {project.techStack.slice(0, 3).map((tech) => (
+                            <TechBadge key={tech} tech={tech} className="text-xs" />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className={cn("text-2xl font-bold tabular-nums", getScoreColor(project.totalScore))}>
-                      {project.totalScore}
+                    <div className="flex items-center gap-4">
+                      <div className={cn("text-2xl font-bold tabular-nums", getScoreColor(project.totalScore))}>
+                        {project.totalScore}
+                      </div>
+                      <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary hidden sm:block">
+                        <div
+                          className={cn("h-full rounded-full transition-all duration-500", getScoreBgColor(project.totalScore))}
+                          style={{ width: `${project.totalScore}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary hidden sm:block">
-                      <div
-                        className={cn("h-full rounded-full transition-all duration-500", getScoreBgColor(project.totalScore))}
-                        style={{ width: `${project.totalScore}%` }}
-                      />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>

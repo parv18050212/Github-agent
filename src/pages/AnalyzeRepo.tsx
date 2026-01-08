@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Loader2, CheckCircle, GitBranch, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,34 +6,68 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { simulateAnalysis } from "@/lib/mockData";
+import { useAnalyzeRepository, useJobStatus } from "@/hooks/api";
 
-type AnalysisStep = "idle" | "cloning" | "analyzing" | "scoring" | "complete" | "error";
+type AnalysisStep = "idle" | "pending" | "cloning" | "analyzing" | "scoring" | "completed" | "failed";
 
 const stepMessages: Record<AnalysisStep, string> = {
   idle: "Ready to analyze",
+  pending: "Submitting request...",
   cloning: "Cloning repository...",
   analyzing: "Analyzing code patterns...",
   scoring: "Calculating scores...",
-  complete: "Analysis complete!",
-  error: "Analysis failed",
+  completed: "Analysis complete!",
+  failed: "Analysis failed",
 };
 
 const stepProgress: Record<AnalysisStep, number> = {
   idle: 0,
+  pending: 10,
   cloning: 25,
   analyzing: 50,
   scoring: 75,
-  complete: 100,
-  error: 0,
+  completed: 100,
+  failed: 0,
 };
 
 export default function AnalyzeRepo() {
   const navigate = useNavigate();
   const [repoUrl, setRepoUrl] = useState("");
   const [teamName, setTeamName] = useState("");
+  const [jobId, setJobId] = useState<string | null>(null);
   const [step, setStep] = useState<AnalysisStep>("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const analyzeMutation = useAnalyzeRepository();
+  const { data: jobStatus } = useJobStatus(jobId, { enabled: !!jobId });
+
+  // Map backend status to UI step
+  useEffect(() => {
+    if (jobStatus) {
+      const statusMap: Record<string, AnalysisStep> = {
+        pending: "pending",
+        cloning: "cloning",
+        analyzing: "analyzing",
+        scoring: "scoring",
+        completed: "completed",
+        failed: "failed",
+      };
+      
+      const newStep = statusMap[jobStatus.status] || "analyzing";
+      setStep(newStep);
+
+      if (jobStatus.status === "completed" && jobStatus.projectId) {
+        setTimeout(() => {
+          navigate(`/project/${jobStatus.projectId}`);
+        }, 1000);
+      }
+
+      if (jobStatus.status === "failed") {
+        setError(jobStatus.error || "Analysis failed. Please try again.");
+        setJobId(null);
+      }
+    }
+  }, [jobStatus, navigate]);
 
   const isValidUrl = (url: string) => {
     try {
@@ -47,6 +81,7 @@ export default function AnalyzeRepo() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setJobId(null);
 
     if (!isValidUrl(repoUrl)) {
       setError("Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)");
@@ -58,31 +93,29 @@ export default function AnalyzeRepo() {
       return;
     }
 
-    // Simulate analysis steps
-    setStep("cloning");
-    await new Promise((r) => setTimeout(r, 1000));
-    
-    setStep("analyzing");
-    await new Promise((r) => setTimeout(r, 1500));
-    
-    setStep("scoring");
-    await new Promise((r) => setTimeout(r, 1000));
+    setStep("pending");
 
     try {
-      const result = await simulateAnalysis(repoUrl, teamName);
-      setStep("complete");
-      
-      // Navigate to results after a brief delay
-      setTimeout(() => {
-        navigate(`/project/${result.id}`);
-      }, 1000);
-    } catch {
-      setStep("error");
-      setError("Failed to analyze repository. Please try again.");
+      const result = await analyzeMutation.mutateAsync({
+        repoUrl,
+        teamName: teamName.trim(),
+      });
+      setJobId(result.jobId);
+    } catch (err) {
+      setStep("failed");
+      setError(err instanceof Error ? err.message : "Failed to start analysis. Please try again.");
     }
   };
 
-  const isAnalyzing = step !== "idle" && step !== "complete" && step !== "error";
+  const isAnalyzing = step !== "idle" && step !== "completed" && step !== "failed";
+
+  const handleReset = () => {
+    setStep("idle");
+    setJobId(null);
+    setError(null);
+    setRepoUrl("");
+    setTeamName("");
+  };
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -137,22 +170,29 @@ export default function AnalyzeRepo() {
               </div>
             )}
 
-            <Button type="submit" className="w-full gap-2" disabled={isAnalyzing}>
-              {isAnalyzing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : step === "complete" ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <Search className="h-4 w-4" />
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1 gap-2" disabled={isAnalyzing}>
+                {isAnalyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : step === "completed" ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                {step === "idle" ? "Start Analysis" : stepMessages[step]}
+              </Button>
+              {step === "failed" && (
+                <Button type="button" variant="outline" onClick={handleReset}>
+                  Try Again
+                </Button>
               )}
-              {step === "idle" ? "Start Analysis" : stepMessages[step]}
-            </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
 
       {/* Progress Section */}
-      {step !== "idle" && step !== "error" && (
+      {step !== "idle" && step !== "failed" && (
         <Card>
           <CardHeader>
             <CardTitle>Analysis Progress</CardTitle>
@@ -160,7 +200,7 @@ export default function AnalyzeRepo() {
           <CardContent className="space-y-4">
             <Progress value={stepProgress[step]} className="h-2" />
             <div className="space-y-3">
-              {(["cloning", "analyzing", "scoring", "complete"] as AnalysisStep[]).map((s) => (
+              {(["pending", "cloning", "analyzing", "scoring", "completed"] as AnalysisStep[]).map((s) => (
                 <div
                   key={s}
                   className={`flex items-center gap-3 text-sm ${
