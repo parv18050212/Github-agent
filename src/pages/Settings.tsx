@@ -1,12 +1,16 @@
+import { useTheme } from "next-themes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Settings as SettingsIcon, Bell, Moon, Globe } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Moon, Globe, Monitor, Sun } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
+
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div>
@@ -70,15 +74,43 @@ export default function Settings() {
             <Moon className="h-5 w-5" />
             Appearance
           </CardTitle>
+          <CardDescription>
+            Choose your preferred theme
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Dark Mode</Label>
-              <p className="text-sm text-muted-foreground">Toggle dark theme</p>
+        <CardContent>
+          <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-3 gap-4">
+            <div>
+              <RadioGroupItem value="light" id="light" className="peer sr-only" />
+              <Label
+                htmlFor="light"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+              >
+                <Sun className="mb-3 h-6 w-6" />
+                Light
+              </Label>
             </div>
-            <Switch />
-          </div>
+            <div>
+              <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+              <Label
+                htmlFor="dark"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+              >
+                <Moon className="mb-3 h-6 w-6" />
+                Dark
+              </Label>
+            </div>
+            <div>
+              <RadioGroupItem value="system" id="system" className="peer sr-only" />
+              <Label
+                htmlFor="system"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+              >
+                <Monitor className="mb-3 h-6 w-6" />
+                System
+              </Label>
+            </div>
+          </RadioGroup>
         </CardContent>
       </Card>
 
