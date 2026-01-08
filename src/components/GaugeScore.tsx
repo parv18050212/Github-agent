@@ -22,9 +22,9 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
   }, [clampedScore]);
 
   const sizeConfig = {
-    sm: { width: 80, strokeWidth: 8, fontSize: "text-lg", labelSize: "text-xs" },
-    md: { width: 120, strokeWidth: 10, fontSize: "text-2xl", labelSize: "text-sm" },
-    lg: { width: 160, strokeWidth: 12, fontSize: "text-4xl", labelSize: "text-base" },
+    sm: { width: 80, strokeWidth: 8, fontSize: "text-lg", labelSize: "text-xs", scoreBottom: 8 },
+    md: { width: 120, strokeWidth: 10, fontSize: "text-2xl", labelSize: "text-sm", scoreBottom: 12 },
+    lg: { width: 160, strokeWidth: 12, fontSize: "text-4xl", labelSize: "text-base", scoreBottom: 16 },
   };
 
   const config = sizeConfig[size];
@@ -107,11 +107,11 @@ export function GaugeScore({ score, size = "md", label, showLabel = true, classN
       {/* Score text */}
       <div 
         className={cn(
-          "absolute font-bold tabular-nums transition-all duration-500",
+          "absolute left-1/2 -translate-x-1/2 font-bold tabular-nums transition-all duration-500",
           config.fontSize,
           getScoreColor(animatedScore)
         )}
-        style={{ top: `${config.width / 2 - 8}px` }}
+        style={{ bottom: `${config.scoreBottom}px` }}
       >
         {animatedScore}
       </div>
