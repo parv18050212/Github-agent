@@ -5,7 +5,7 @@ import type { AnalyzeRequest, AnalyzeResponse, JobStatusResponse } from "@/types
 export function useAnalyzeRepository() {
   return useMutation<AnalyzeResponse, Error, AnalyzeRequest>({
     mutationFn: async (request) => {
-      const { data } = await apiClient.post<AnalyzeResponse>("/api/analyze", request);
+      const { data } = await apiClient.post<AnalyzeResponse>("/api/analyze-repo", request);
       return data;
     },
   });
