@@ -90,26 +90,31 @@ export default function ProjectReport() {
               <CardTitle>Score Overview</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
-              <div className="col-span-2 md:col-span-3 lg:col-span-2 flex flex-col items-center justify-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+          <CardContent className="space-y-8">
+            {/* Hero Total Score */}
+            <div className="flex justify-center">
+              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border border-primary/20 shadow-lg shadow-primary/5">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-transparent to-white/5 pointer-events-none" />
                 <GaugeScore score={project.totalScore} size="lg" label="Total Score" />
               </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <GaugeScore score={project.qualityScore} size="sm" label="Quality" />
-              </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <GaugeScore score={project.securityScore} size="sm" label="Security" />
-              </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <GaugeScore score={project.originalityScore} size="sm" label="Originality" />
-              </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <GaugeScore score={project.architectureScore} size="sm" label="Architecture" />
-              </div>
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <GaugeScore score={project.documentationScore} size="sm" label="Docs" />
-              </div>
+            </div>
+            
+            {/* Category Scores Row */}
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+              {[
+                { score: project.qualityScore, label: "Quality" },
+                { score: project.securityScore, label: "Security" },
+                { score: project.originalityScore, label: "Originality" },
+                { score: project.architectureScore, label: "Architecture" },
+                { score: project.documentationScore, label: "Documentation" },
+              ].map((item) => (
+                <div 
+                  key={item.label} 
+                  className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                >
+                  <GaugeScore score={item.score} size="md" label={item.label} />
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
