@@ -1,39 +1,22 @@
-import { useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Download, Shield, GitBranch, Users, FileCode, AlertTriangle, CheckCircle, Cpu, Clock, Star, Sparkles } from "lucide-react";
-import { usePDF } from "react-to-pdf";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { GaugeScore } from "@/components/GaugeScore";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { TechBadge } from "@/components/TechBadge";
 import { getProjectById, getSeverityColor, getScoreColor } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from "recharts";
 
 export default function ProjectReport() {
   const { id } = useParams<{ id: string }>();
   const project = getProjectById(id || "");
 
-  const { toPDF, targetRef } = usePDF({
-    filename: project ? `${project.teamName.replace(/\s+/g, '-')}-evaluation-report.pdf` : 'report.pdf',
-  });
+  const handleExportPDF = () => {
+    window.print();
+  };
 
   if (!project) {
     return (
@@ -50,19 +33,6 @@ export default function ProjectReport() {
       </div>
     );
   }
-
-  const languageChartData = project.languages.map((lang) => ({
-    name: lang.name,
-    value: lang.percentage,
-  }));
-
-  const COLORS = [
-    "hsl(var(--primary))",
-    "hsl(var(--success))",
-    "hsl(var(--warning))",
-    "hsl(var(--info))",
-    "hsl(var(--destructive))",
-  ];
 
   const scoreBreakdown = [
     { name: "Quality", score: project.qualityScore },
@@ -101,7 +71,7 @@ export default function ProjectReport() {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={() => toPDF()} 
+            onClick={handleExportPDF} 
             className="gap-2 gradient-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
           >
             <Download className="h-4 w-4" />
@@ -110,8 +80,8 @@ export default function ProjectReport() {
         </div>
       </div>
 
-      {/* Report Content - for PDF */}
-      <div ref={targetRef}>
+      {/* Report Content */}
+      <div>
         {/* Score Overview - Premium Gauge Panel */}
         <Card className="glass-card gradient-border overflow-hidden">
           <CardHeader className="pb-2">
@@ -191,46 +161,30 @@ export default function ProjectReport() {
                 <CardTitle>Languages</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={languageChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {languageChartData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--popover))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "var(--radius)",
-                          boxShadow: "0 10px 40px -10px hsl(var(--primary) / 0.2)",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2 mt-4">
-                  {project.languages.map((lang, index) => (
-                    <div key={lang.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full shadow-sm"
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span>{lang.name}</span>
+                <div className="space-y-3">
+                  {project.languages.map((lang, index) => {
+                    const colors = [
+                      "bg-primary",
+                      "bg-success",
+                      "bg-warning",
+                      "bg-info",
+                      "bg-destructive",
+                    ];
+                    return (
+                      <div key={lang.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>{lang.name}</span>
+                          <span className="text-muted-foreground font-medium">{lang.percentage}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", colors[index % colors.length])}
+                            style={{ width: `${lang.percentage}%` }}
+                          />
+                        </div>
                       </div>
-                      <span className="text-muted-foreground font-medium">{lang.percentage}%</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -327,39 +281,23 @@ export default function ProjectReport() {
                 )}
               </CardHeader>
               <CardContent>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={project.commitPatterns}>
-                      <defs>
-                        <linearGradient id="commitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                        tickFormatter={(value) => new Date(value).toLocaleDateString("en", { month: "short", day: "numeric" })}
-                      />
-                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--popover))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "var(--radius)",
-                          boxShadow: "0 10px 40px -10px hsl(var(--primary) / 0.2)",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="commits"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        fill="url(#commitGradient)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="space-y-2">
+                  {project.commitPatterns.map((pattern) => (
+                    <div key={pattern.date} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {new Date(pattern.date).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
+                          <div 
+                            className="h-full rounded-full bg-primary transition-all duration-500"
+                            style={{ width: `${Math.min(pattern.commits * 2, 100)}%` }}
+                          />
+                        </div>
+                        <span className="font-medium w-8 text-right">{pattern.commits}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 <div className="flex items-center gap-4 mt-4 text-sm p-3 rounded-lg bg-muted/30">
                   <Clock className="h-4 w-4 text-muted-foreground" />
@@ -402,6 +340,7 @@ export default function ProjectReport() {
                         key={index} 
                         className={cn(
                           "p-3 rounded-lg border-l-4 bg-card",
+                          issue.severity === "critical" && "border-l-destructive bg-destructive/5",
                           issue.severity === "high" && "border-l-destructive bg-destructive/5",
                           issue.severity === "medium" && "border-l-warning bg-warning/5",
                           issue.severity === "low" && "border-l-info bg-info/5"
@@ -472,39 +411,27 @@ export default function ProjectReport() {
               </CardContent>
             </Card>
 
-            {/* Score Breakdown Chart */}
+            {/* Score Breakdown */}
             <Card className="card-hover glass-card">
               <CardHeader>
                 <CardTitle>Score Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={scoreBreakdown} layout="vertical">
-                      <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" />
-                          <stop offset="100%" stopColor="hsl(var(--primary) / 0.6)" />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                      <XAxis type="number" domain={[0, 100]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                      <YAxis dataKey="name" type="category" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} width={90} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--popover))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "var(--radius)",
-                          boxShadow: "0 10px 40px -10px hsl(var(--primary) / 0.2)",
-                        }}
-                      />
-                      <Bar 
-                        dataKey="score" 
-                        fill="url(#barGradient)"
-                        radius={[0, 6, 6, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="space-y-3">
+                  {scoreBreakdown.map((item) => (
+                    <div key={item.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>{item.name}</span>
+                        <span className={cn("font-bold", getScoreColor(item.score))}>{item.score}</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+                          style={{ width: `${item.score}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
