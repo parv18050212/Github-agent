@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedNumberProps {
@@ -10,14 +10,14 @@ interface AnimatedNumberProps {
   decimals?: number;
 }
 
-export function AnimatedNumber({ 
+export const AnimatedNumber = forwardRef<HTMLSpanElement, AnimatedNumberProps>(({ 
   value, 
   duration = 1000, 
   className,
   suffix = "",
   prefix = "",
   decimals = 0
-}: AnimatedNumberProps) {
+}, ref) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -48,8 +48,10 @@ export function AnimatedNumber({
     : Math.round(displayValue).toLocaleString();
 
   return (
-    <span className={cn("tabular-nums", className)}>
+    <span ref={ref} className={cn("tabular-nums", className)}>
       {prefix}{formatted}{suffix}
     </span>
   );
-}
+});
+
+AnimatedNumber.displayName = "AnimatedNumber";
