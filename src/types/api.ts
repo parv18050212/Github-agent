@@ -144,3 +144,47 @@ export interface LeaderboardParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+export interface ProjectTreeResponse {
+  projectId: string;
+  tree: string;
+}
+
+export interface CommitAuthor {
+  author: string;
+  commits: number;
+  linesChanged: number;
+  activeDays: number;
+  topFileTypes: string;
+}
+
+export interface CommitDetail {
+  hash: string;
+  short_hash: string;
+  author: string;
+  email: string;
+  message: string;
+  date: string;
+  additions: number;
+  deletions: number;
+  files_changed: Array<{
+    path: string;
+    additions: number;
+    deletions: number;
+  }>;
+}
+
+export interface ProjectCommitsResponse {
+  projectId: string;
+  totalCommits?: number;
+  authors?: CommitAuthor[];
+  author?: string;
+  commits?: CommitDetail[];
+}
+
+export interface ClearAllResponse {
+  success: boolean;
+  deleted: number;
+  failed: number;
+  message: string;
+}

@@ -1,23 +1,52 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Download, Shield, GitBranch, Users, FileCode, AlertTriangle, CheckCircle, Cpu, Clock, Sparkles, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, ExternalLink, Download, Shield, GitBranch, Users, FileCode, AlertTriangle, CheckCircle, Cpu, Clock, Sparkles, Loader2, Trash2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GaugeScore } from "@/components/GaugeScore";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { TechBadge } from "@/components/TechBadge";
-import { useProjectDetails } from "@/hooks/api";
+import { useProjectDetails, useDeleteProject } from "@/hooks/api";
+import { useProjectCommits } from "@/hooks/api/useProjectCommits";
+import { useProjectTree } from "@/hooks/api/useProjectTree";
 import { getSeverityColor, getScoreColor } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 export default function ProjectReport() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: project, isLoading, error } = useProjectDetails(id);
+  const deleteProject = useDeleteProject();
+  const [selectedContributor, setSelectedContributor] = useState<string | null>(null);
+  const [expandedCommit, setExpandedCommit] = useState<string | null>(null);
+  
+  // Fetch individual commits when a contributor is selected
+  const { data: authorCommits } = useProjectCommits(id, selectedContributor || undefined);
+  
+  // Fetch project tree structure
+  const { data: projectTree } = useProjectTree(id);
+  
+  // Get contributor summary data
+  const contributorData = selectedContributor && project 
+    ? project.contributors.find(c => c.name === selectedContributor)
+    : null;
 
   const handleExportPDF = () => {
     window.print();
+  };
+
+  const handleDelete = () => {
+    if (window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      deleteProject.mutate(id!, {
+        onSuccess: () => {
+          navigate("/leaderboard");
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -60,457 +89,420 @@ export default function ProjectReport() {
   }
 
   const scoreBreakdown = [
-    { name: "Quality", score: project.qualityScore },
-    { name: "Security", score: project.securityScore },
-    { name: "Originality", score: project.originalityScore },
-    { name: "Architecture", score: project.architectureScore },
-    { name: "Documentation", score: project.documentationScore },
+    { name: "Quality", score: Math.round(project.qualityScore) },
+    { name: "Security", score: Math.round(project.securityScore) },
+    { name: "Originality", score: Math.round(project.originalityScore) },
+    { name: "Architecture", score: Math.round(project.architectureScore) },
+    { name: "Documentation", score: Math.round(project.documentationScore) },
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon" className="hover:bg-primary/10">
+    <div className="p-4 space-y-4 max-w-7xl mx-auto pb-20">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between gap-4 no-print bg-card/50 p-4 rounded-xl border border-border/40 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
             <Link to="/leaderboard">
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
               {project.teamName}
+              <Badge variant="outline" className="font-mono text-xs font-normal">
+                {project.totalFiles} files
+              </Badge>
             </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <a
-                href={project.repoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
-              >
-                {project.repoUrl}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
+            <a
+              href={project.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+            >
+              {project.repoUrl}
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleExportPDF} 
-            className="gap-2 gradient-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
+          <Button
+            onClick={handleDelete}
+            size="sm"
+            variant="destructive"
+            className="gap-2 shadow-sm text-xs h-8"
+            disabled={deleteProject.isPending}
           >
-            <Download className="h-4 w-4" />
+            {deleteProject.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Trash2 className="h-3 w-3" />
+            )}
+            Delete
+          </Button>
+          <Button
+            onClick={handleExportPDF}
+            size="sm"
+            className="gap-2 gradient-primary text-primary-foreground shadow-sm text-xs h-8"
+          >
+            <Download className="h-3 w-3" />
             Export Report
           </Button>
         </div>
       </div>
 
-      {/* Report Content */}
-      <div>
-        {/* Score Overview - Premium Gauge Panel */}
-        <Card className="glass-card gradient-border overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle>Score Overview</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            {/* Hero Total Score */}
-            <div className="flex justify-center">
-              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 border border-primary/20 shadow-lg shadow-primary/5">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-transparent to-white/5 pointer-events-none" />
-                <GaugeScore score={project.totalScore} size="lg" label="Total Score" />
-              </div>
-            </div>
-            
-            {/* Category Scores Row */}
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-              {[
-                { score: project.qualityScore, label: "Quality" },
-                { score: project.securityScore, label: "Security" },
-                { score: project.originalityScore, label: "Originality" },
-                { score: project.architectureScore, label: "Architecture" },
-                { score: project.documentationScore, label: "Documentation" },
-              ].map((item) => (
-                <div 
-                  key={item.label} 
-                  className="p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-300 hover:scale-105 hover:shadow-md"
-                >
-                  <GaugeScore score={item.score} size="md" label={item.label} />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left Column (Main Content) - 8 cols */}
+        <div className="lg:col-span-8 space-y-4">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Left Column - Project Info */}
-          <div className="space-y-6">
-            {/* Tech Stack */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <FileCode className="h-4 w-4" />
+          {/* AI Analysis (Prominent) */}
+          <Card className="glass-card gradient-border">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 text-primary" />
+                AI Executive Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="p-3 rounded-lg bg-muted/30 text-sm leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground play-font">Verdict: </span>
+                {project.aiVerdict}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {/* Strengths */}
+                {project.strengths.length > 0 && (
+                  <div className="bg-success/5 p-3 rounded-lg border border-success/10">
+                    <h4 className="text-xs font-semibold text-success mb-2 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" /> Strengths
+                    </h4>
+                    <ul className="space-y-1">
+                      {project.strengths.slice(0, 3).map((strength, i) => (
+                        <li key={i} className="text-xs text-muted-foreground" title={strength}>
+                          • {strength}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                )}
+                {/* Improvements */}
+                {project.improvements.length > 0 && (
+                  <div className="bg-warning/5 p-3 rounded-lg border border-warning/10">
+                    <h4 className="text-xs font-semibold text-warning mb-2 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Improvements
+                    </h4>
+                    <ul className="space-y-1">
+                      {project.improvements.slice(0, 3).map((imp, i) => (
+                        <li key={i} className="text-xs text-muted-foreground" title={imp}>
+                          • {imp}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tech & Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tech Stack */}
+            <Card className="glass-card">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <FileCode className="h-4 w-4 text-primary" />
                   Tech Stack
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {project.techStack.map((tech, i) => (
-                    <div 
-                      key={tech} 
-                      className="stagger-item"
-                      style={{ animationDelay: `${i * 50}ms` }}
-                    >
-                      <TechBadge tech={tech} />
-                    </div>
+              <CardContent className="px-4 pb-4">
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {project.techStack.map((tech) => (
+                    <TechBadge key={tech} tech={tech} /> // Assuming TechBadge handles size
                   ))}
                 </div>
-                <Separator />
-                <div>
-                  <span className="text-sm font-medium">Architecture Pattern</span>
-                  <p className="text-muted-foreground">{project.architecturePattern}</p>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">Frameworks</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {project.frameworks.map((fw) => (
-                      <Badge key={fw} variant="secondary" className="bg-secondary/50">{fw}</Badge>
-                    ))}
+                <div className="text-xs space-y-1 text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Architecture:</span>
+                    <span className="font-medium text-foreground">{project.architecturePattern}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Frameworks:</span>
+                    <span className="font-medium text-foreground">{project.frameworks.join(", ")}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Languages Breakdown */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle>Languages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {project.languages.map((lang, index) => {
-                    const colors = [
-                      "bg-primary",
-                      "bg-success",
-                      "bg-warning",
-                      "bg-info",
-                      "bg-destructive",
-                    ];
-                    return (
-                      <div key={lang.name} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>{lang.name}</span>
-                          <span className="text-muted-foreground font-medium">{lang.percentage}%</span>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/50">
-                          <div
-                            className={cn("h-full rounded-full transition-all duration-500", colors[index % colors.length])}
-                            style={{ width: `${lang.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Project Stats */}
-            <Card className="card-hover glass-card score-card">
-              <CardHeader>
-                <CardTitle>Project Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Total Files</span>
-                  <span className="font-bold text-lg">
-                    <AnimatedNumber value={project.totalFiles} />
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Lines of Code</span>
-                  <span className="font-bold text-lg">
-                    <AnimatedNumber value={project.totalLinesOfCode} />
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Test Coverage</span>
-                  <span className={cn("font-bold text-lg", getScoreColor(project.testCoverage))}>
-                    <AnimatedNumber value={project.testCoverage} suffix="%" />
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Total Commits</span>
-                  <span className="font-bold text-lg">
-                    <AnimatedNumber value={project.totalCommits} />
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Middle Column - Commit Forensics & Security */}
-          <div className="space-y-6">
-            {/* Contributors */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-info/10 text-info">
-                    <Users className="h-4 w-4" />
-                  </div>
-                  Contributors
-                </CardTitle>
-                <CardDescription>
-                  {project.contributors.length} team members
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {project.contributors.map((contributor, i) => (
-                    <div 
-                      key={contributor.name} 
-                      className="space-y-2 stagger-item"
-                      style={{ animationDelay: `${i * 100}ms` }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{contributor.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {contributor.commits} commits ({contributor.percentage}%)
-                        </span>
-                      </div>
-                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-                        <div 
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-1000"
-                          style={{ width: `${contributor.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Commit Timeline */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-success/10 text-success">
-                    <GitBranch className="h-4 w-4" />
-                  </div>
+            {/* Commit Activity */}
+            <Card className="glass-card">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <GitBranch className="h-4 w-4 text-info" />
                   Commit Activity
                 </CardTitle>
-                {project.burstCommitWarning && (
-                  <div className="flex items-center gap-2 text-warning text-sm bg-warning/10 px-3 py-1.5 rounded-full w-fit">
-                    <AlertTriangle className="h-4 w-4" />
-                    Burst commit pattern detected
-                  </div>
-                )}
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 pb-4">
                 <div className="space-y-2">
-                  {project.commitPatterns.map((pattern) => (
-                    <div key={pattern.date} className="flex items-center justify-between text-sm">
+                  {project.commitPatterns.slice(0, 3).map((pattern) => (
+                    <div key={pattern.date} className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">
                         {new Date(pattern.date).toLocaleDateString("en", { month: "short", day: "numeric" })}
                       </span>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
-                          <div 
-                            className="h-full rounded-full bg-primary transition-all duration-500"
-                            style={{ width: `${Math.min(pattern.commits * 2, 100)}%` }}
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{ width: `${Math.min(pattern.commits * 5, 100)}%` }}
                           />
                         </div>
-                        <span className="font-medium w-8 text-right">{pattern.commits}</span>
+                        <span className="font-mono">{pattern.commits}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-4 mt-4 text-sm p-3 rounded-lg bg-muted/30">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Last-minute commits:</span>
-                  <span className={cn("font-bold", project.lastMinuteCommits > 10 ? "text-warning" : "text-foreground")}>
-                    {project.lastMinuteCommits}
-                  </span>
+                <div className="mt-3 text-xs flex justify-between border-t border-border/50 pt-2">
+                  <span className="text-muted-foreground">Total Commits</span>
+                  <span className="font-bold">{project.totalCommits}</span>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Security Issues */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className={cn(
-                    "p-2 rounded-lg",
-                    project.securityIssues.length === 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                  )}>
-                    <Shield className="h-4 w-4" />
-                  </div>
-                  Security Findings
-                </CardTitle>
-                <CardDescription>
-                  {project.securityIssues.length === 0
-                    ? "No security issues detected"
-                    : `${project.securityIssues.length} issue(s) found`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {project.securityIssues.length === 0 ? (
-                  <div className="flex items-center gap-2 text-success p-4 rounded-lg bg-success/10 border border-success/20">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">All security checks passed</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {project.securityIssues.map((issue, index) => (
-                      <div 
-                        key={index} 
-                        className={cn(
-                          "p-3 rounded-lg border-l-4 bg-card",
-                          issue.severity === "critical" && "border-l-destructive bg-destructive/5",
-                          issue.severity === "high" && "border-l-destructive bg-destructive/5",
-                          issue.severity === "medium" && "border-l-warning bg-warning/5",
-                          issue.severity === "low" && "border-l-info bg-info/5"
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge className={getSeverityColor(issue.severity)}>
-                            {issue.severity.toUpperCase()}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                            {issue.file}:{issue.line}
-                          </span>
-                        </div>
-                        <div className="font-medium text-sm">{issue.type}</div>
-                        <p className="text-sm text-muted-foreground mt-1">{issue.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column - AI Analysis & Scores */}
-          <div className="space-y-6">
-            {/* AI Detection */}
-            <Card className="card-hover glass-card gradient-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary animate-pulse-glow">
-                    <Cpu className="h-4 w-4" />
-                  </div>
-                  AI Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium">AI-Generated Code</span>
-                    <span className={cn(
-                      "font-bold text-xl",
-                      project.aiGeneratedPercentage > 40 ? "text-warning" : 
-                      project.aiGeneratedPercentage > 20 ? "text-info" : "text-success"
-                    )}>
-                      {project.aiGeneratedPercentage}%
-                    </span>
-                  </div>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
-                    <div 
-                      className={cn(
-                        "h-full rounded-full transition-all duration-1000",
-                        project.aiGeneratedPercentage > 40 ? "bg-warning" : 
-                        project.aiGeneratedPercentage > 20 ? "bg-info" : "bg-success"
-                      )}
-                      style={{ width: `${project.aiGeneratedPercentage}%` }}
+          <Card className="glass-card">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-violet-500" />
+                Contributors
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="flex flex-wrap gap-4">
+                {project.contributors.map((contributor) => (
+                  <button
+                    key={contributor.name}
+                    onClick={() => setSelectedContributor(contributor.name)}
+                    className="flex items-center gap-3 bg-secondary/30 pr-5 pl-1.5 py-1.5 rounded-full border border-border/50 transition-all hover:bg-secondary/50 hover:border-primary/50 hover:scale-105 cursor-pointer"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary border-2 border-background shadow-sm">
+                      {contributor.name[0]}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium leading-none">{contributor.name}</span>
+                      <span className="text-xs text-muted-foreground leading-none">
+                        {contributor.commits} commits ({contributor.percentage}%)
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Code Structure Tree */}
+          <Card className="glass-card">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <FileCode className="h-4 w-4 text-blue-500" />
+                Code Structure
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              {projectTree?.tree && projectTree.tree !== "Repository structure not available" ? (
+                <pre className="text-xs font-mono bg-secondary/30 p-3 rounded-lg overflow-x-auto max-h-96 overflow-y-auto whitespace-pre">
+                  {projectTree.tree}
+                </pre>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Repository structure not available
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+
+        </div>
+
+        {/* Right Column (Scores) - 4 cols */}
+        <div className="lg:col-span-4 space-y-4">
+
+          {/* Main Score Card */}
+          <Card className="glass-card overflow-hidden bg-gradient-to-b from-card/90 to-card/50">
+            <CardHeader className="pb-0 pt-6 px-0 text-center">
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Total Score</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-center pb-6">
+              <div className="scale-90 origin-top">
+                <GaugeScore score={project.totalScore} size="lg" showLabel={false} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Compact Score Breakdown List */}
+          <Card className="glass-card">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm">Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-3">
+              {[
+                { label: "Quality", score: Math.round(project.qualityScore) },
+                { label: "Security", score: Math.round(project.securityScore) },
+                { label: "Originality", score: Math.round(project.originalityScore) },
+                { label: "Architecture", score: Math.round(project.architectureScore) },
+                { label: "Docs", score: Math.round(project.documentationScore) },
+              ].map((item) => (
+                <div key={item.label} className="grid grid-cols-12 gap-2 items-center text-xs">
+                  <span className="col-span-4 font-medium text-muted-foreground">{item.label}</span>
+                  <div className="col-span-6 h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full", getScoreColor(item.score).replace("text-", "bg-"))}
+                      style={{ width: `${item.score}%` }}
                     />
                   </div>
+                  <span className="col-span-2 text-right font-mono">{item.score}</span>
                 </div>
-                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Cpu className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Verdict</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{project.aiVerdict}</p>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </CardContent>
+          </Card>
 
-            {/* Score Breakdown */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle>Score Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {scoreBreakdown.map((item) => (
-                    <div key={item.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{item.name}</span>
-                        <span className={cn("font-bold", getScoreColor(item.score))}>
-                          {item.score}/100
-                        </span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                        <div 
-                          className={cn(
-                            "h-full rounded-full transition-all duration-1000",
-                            item.score >= 80 ? "bg-success" :
-                            item.score >= 60 ? "bg-warning" : "bg-destructive"
-                          )}
-                          style={{ width: `${item.score}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recommendations */}
-            <Card className="card-hover glass-card">
-              <CardHeader>
-                <CardTitle>Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {project.strengths.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-success mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Strengths
-                    </h4>
-                    <ul className="space-y-1">
-                      {project.strengths.map((strength, i) => (
-                        <li key={i} className="text-sm text-muted-foreground pl-6 relative before:content-['•'] before:absolute before:left-2 before:text-success">
-                          {strength}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {project.improvements.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-warning mb-2 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Areas for Improvement
-                    </h4>
-                    <ul className="space-y-1">
-                      {project.improvements.map((improvement, i) => (
-                        <li key={i} className="text-sm text-muted-foreground pl-6 relative before:content-['•'] before:absolute before:left-2 before:text-warning">
-                          {improvement}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          {/* Security Summary Badge */}
+          <div className={cn(
+            "p-3 rounded-xl border flex items-center gap-3",
+            project.securityIssues.length === 0
+              ? "bg-success/5 border-success/20 text-success-foreground"
+              : "bg-destructive/5 border-destructive/20 text-destructive"
+          )}>
+            <Shield className="h-5 w-5" />
+            <div>
+              <div className="text-xs font-bold uppercase opacity-80">Security Status</div>
+              <div className="text-sm font-medium">
+                {project.securityIssues.length === 0 ? "Safe & Secure" : `${project.securityIssues.length} Issues Detected`}
+              </div>
+            </div>
           </div>
+
+          {/* AI Code Pct */}
+          <div className="p-3 rounded-xl border bg-card/50 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">AI Code Detected</span>
+            <div className="flex items-center gap-2">
+              <div className={cn("h-2 w-2 rounded-full", project.aiGeneratedPercentage > 50 ? "bg-warning" : "bg-success")} />
+              <span className="font-mono font-bold">{project.aiGeneratedPercentage}%</span>
+            </div>
+          </div>
+
+
         </div>
       </div>
+
+      {/* Contributor Details Dialog */}
+      <Dialog open={!!selectedContributor} onOpenChange={() => setSelectedContributor(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {authorCommits?.commits && authorCommits.commits.length > 0 
+                ? `Commits by ${selectedContributor}`
+                : `Contributor: ${selectedContributor}`
+              }
+            </DialogTitle>
+            <DialogDescription>
+              {authorCommits?.commits && authorCommits.commits.length > 0 
+                ? "Complete commit history and file changes"
+                : "Contribution summary"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {authorCommits?.commits && authorCommits.commits.length > 0 ? (
+            <div className="space-y-3">
+              {authorCommits.commits.map((commit) => {
+                const isExpanded = expandedCommit === commit.hash;
+                return (
+                  <Card key={commit.hash} className="hover:bg-secondary/50 transition-colors">
+                    <CardContent className="pt-4">
+                      <button
+                        onClick={() => setExpandedCommit(isExpanded ? null : commit.hash)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <ChevronDown className={cn(
+                                "h-4 w-4 transition-transform",
+                                isExpanded ? "" : "-rotate-90"
+                              )} />
+                              <code className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">
+                                {commit.short_hash}
+                              </code>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(commit.date).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium mb-2 hover:text-primary transition-colors">{commit.message}</p>
+                            <div className="flex items-center gap-4 text-xs">
+                              <span className="text-green-500">+{commit.additions}</span>
+                              <span className="text-red-500">-{commit.deletions}</span>
+                              <span className="text-muted-foreground">
+                                {commit.files_changed.length} file{commit.files_changed.length !== 1 ? 's' : ''} changed
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      {isExpanded && commit.files_changed.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2">Files Changed:</p>
+                          <div className="space-y-1">
+                            {commit.files_changed.map((file, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs bg-secondary/30 px-2 py-1 rounded">
+                                <code className="text-muted-foreground truncate flex-1">{file.path}</code>
+                                <div className="flex items-center gap-2 ml-2">
+                                  <span className="text-green-500">+{file.additions}</span>
+                                  <span className="text-red-500">-{file.deletions}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : contributorData ? (
+            <div className="space-y-4">
+              <div className="text-center py-4 bg-secondary/20 rounded-lg border border-border/50">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Detailed commit history not available for this project.
+                  <br />
+                  <span className="text-xs">Re-analyze the repository to see individual commits.</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="bg-secondary/20">
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary">{contributorData.commits}</p>
+                      <p className="text-xs text-muted-foreground">Total Commits</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-secondary/20">
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-violet-500">{contributorData.percentage}%</p>
+                      <p className="text-xs text-muted-foreground">Contribution</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No data available for this contributor.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

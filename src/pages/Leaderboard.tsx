@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Search, ArrowUpDown, ExternalLink, Filter, Trophy, TrendingUp, Shield, BarChart3, Loader2 } from "lucide-react";
+import { Search, ArrowUpDown, ExternalLink, Filter, Trophy, TrendingUp, Shield, BarChart3, Loader2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,20 +9,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { TechBadge } from "@/components/TechBadge";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
-import { useLeaderboard } from "@/hooks/api";
+import { useLeaderboard, useClearAllProjects } from "@/hooks/api";
 import { getScoreColor, getScoreBgColor } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from "recharts";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type SortField = "rank" | "totalScore" | "qualityScore" | "securityScore" | "originalityScore";
 type SortOrder = "asc" | "desc";
 
 export default function Leaderboard() {
   const { data: projects = [], isLoading } = useLeaderboard();
+  const clearAllMutation = useClearAllProjects();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("totalScore");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [techFilter, setTechFilter] = useState<string>("all");
+
+  const handleClearAll = async () => {
+    await clearAllMutation.mutateAsync();
+  };
 
   // Get unique tech stacks for filter
   const allTechStacks = useMemo(() => {
@@ -255,6 +271,32 @@ export default function Leaderboard() {
                 ))}
               </SelectContent>
             </Select>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Clear All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all {projects.length} projects from the database.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearAll}
+                    className="bg-destructive hover:bg-destructive/90"
+                    disabled={clearAllMutation.isPending}
+                  >
+                    {clearAllMutation.isPending ? "Clearing..." : "Clear All Projects"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
@@ -372,13 +414,13 @@ export default function Leaderboard() {
                       </div>
                     </TableCell>
                     <TableCell className={cn("tabular-nums", getScoreColor(project.qualityScore))}>
-                      {project.qualityScore}
+                      {Math.round(project.qualityScore)}
                     </TableCell>
                     <TableCell className={cn("tabular-nums", getScoreColor(project.securityScore))}>
-                      {project.securityScore}
+                      {Math.round(project.securityScore)}
                     </TableCell>
                     <TableCell className={cn("tabular-nums", getScoreColor(project.originalityScore))}>
-                      {project.originalityScore}
+                      {Math.round(project.originalityScore)}
                     </TableCell>
                     <TableCell>
                       <Button asChild variant="ghost" size="icon" className="hover:bg-primary/10">
