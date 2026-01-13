@@ -84,8 +84,8 @@ export interface StatsResponse {
 }
 
 export interface AnalyzeRequest {
-  repoUrl: string;
-  teamName: string;
+  repo_url: string;
+  team_name?: string;
 }
 
 export interface AnalyzeResponse {
@@ -95,30 +95,46 @@ export interface AnalyzeResponse {
 
 export interface JobStatusResponse {
   jobId: string;
-  status: "pending" | "cloning" | "analyzing" | "scoring" | "completed" | "failed";
+  status: "queued" | "pending" | "running" | "completed" | "failed";
   progress: number;
+  current_stage?: string;
   projectId?: string;
   error?: string;
 }
 
 export interface BatchUploadResponse {
-  batchId: string;
-  totalTeams: number;
+  batchId: string | null;  // NEW: for tracking batch progress
+  success: number;
+  failed: number;
+  total: number;
   message: string;
+  queued: {
+    row: number;
+    teamName: string;
+    repoUrl: string;
+    jobId: string;
+    projectId: string;
+  }[];
+  errors: {
+    row: number;
+    teamName?: string;
+    repoUrl?: string;
+    error: string;
+  }[];
 }
 
 export interface BatchStatusResponse {
   batchId: string;
-  status: "processing" | "completed" | "failed";
-  progress: number;
-  results: {
-    teamName: string;
-    repoUrl: string;
-    status: "pending" | "processing" | "completed" | "failed";
-    projectId?: string;
-    score?: number;
-    error?: string;
-  }[];
+  status: "pending" | "processing" | "completed" | "failed";
+  total: number;
+  completed: number;
+  failed: number;
+  currentIndex: number;
+  currentRepo?: string;
+  currentTeam?: string;
+  createdAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
 }
 
 export interface LeaderboardParams {

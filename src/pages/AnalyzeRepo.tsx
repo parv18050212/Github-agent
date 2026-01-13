@@ -41,22 +41,61 @@ export default function AnalyzeRepo() {
   const analyzeMutation = useAnalyzeRepository();
   const { data: jobStatus } = useJobStatus(jobId, { enabled: !!jobId });
 
+  // Restore analysis state from localStorage on mount
+  useEffect(() => {
+    const savedJobId = localStorage.getItem("currentAnalysisJobId");
+    const savedRepoUrl = localStorage.getItem("currentAnalysisRepoUrl");
+    const savedTeamName = localStorage.getItem("currentAnalysisTeamName");
+    
+    if (savedJobId) {
+      setJobId(savedJobId);
+      setStep("pending");
+      if (savedRepoUrl) setRepoUrl(savedRepoUrl);
+      if (savedTeamName) setTeamName(savedTeamName);
+    }
+  }, []);
+
   // Map backend status to UI step
   useEffect(() => {
     if (jobStatus) {
-      const statusMap: Record<string, AnalysisStep> = {
-        pending: "pending",
-        cloning: "cloning",
-        analyzing: "analyzing",
-        scoring: "scoring",
-        completed: "completed",
-        failed: "failed",
-      };
+      let newStep: AnalysisStep;
       
-      const newStep = statusMap[jobStatus.status] || "analyzing";
+      // Backend uses 'running' status with current_stage to indicate progress
+      if (jobStatus.status === "running" || jobStatus.status === "queued" || jobStatus.status === "pending") {
+        // Map current_stage to UI steps based on backend's STAGE_PROGRESS
+        const stage = (jobStatus.current_stage || "").toLowerCase();
+        const progress = jobStatus.progress || 0;
+        
+        // Backend stages: starting, cloning, stack_detection, structure_analysis, 
+        // maturity_check, commit_forensics, quality_check, security_scan, 
+        // forensic_analysis, ai_judge, aggregation, completed
+        
+        if (stage === "starting" || stage === "cloning" || progress <= 10) {
+          newStep = "cloning";
+        } else if (stage === "ai_judge" || stage === "aggregation" || progress >= 85) {
+          newStep = "scoring";
+        } else if (progress > 10) {
+          // Any stage between cloning and ai_judge
+          newStep = "analyzing";
+        } else {
+          newStep = "pending";
+        }
+      } else if (jobStatus.status === "completed") {
+        newStep = "completed";
+      } else if (jobStatus.status === "failed") {
+        newStep = "failed";
+      } else {
+        newStep = "analyzing";
+      }
+      
       setStep(newStep);
 
       if (jobStatus.status === "completed" && jobStatus.projectId) {
+        // Clear localStorage when completed
+        localStorage.removeItem("currentAnalysisJobId");
+        localStorage.removeItem("currentAnalysisRepoUrl");
+        localStorage.removeItem("currentAnalysisTeamName");
+        
         setTimeout(() => {
           navigate(`/project/${jobStatus.projectId}`);
         }, 1000);
@@ -65,6 +104,11 @@ export default function AnalyzeRepo() {
       if (jobStatus.status === "failed") {
         setError(jobStatus.error || "Analysis failed. Please try again.");
         setJobId(null);
+        
+        // Clear localStorage on failure
+        localStorage.removeItem("currentAnalysisJobId");
+        localStorage.removeItem("currentAnalysisRepoUrl");
+        localStorage.removeItem("currentAnalysisTeamName");
       }
     }
   }, [jobStatus, navigate]);
@@ -100,10 +144,26 @@ export default function AnalyzeRepo() {
         repoUrl,
         teamName: teamName.trim(),
       });
+      
+      // Save to localStorage for persistence across reloads
       setJobId(result.jobId);
-    } catch (err) {
+      localStorage.setItem("currentAnalysisJobId", result.jobId);
+      localStorage.setItem("currentAnalysisRepoUrl", repoUrl);
+      localStorage.setItem("currentAnalysisTeamName", teamName.trim());
+    } catch (err: any) {
       setStep("failed");
-      setError(err instanceof Error ? err.message : "Failed to start analysis. Please try again.");
+      // Handle error properly - check for API error response
+      if (err?.response?.data?.detail) {
+        // FastAPI validation error format
+        if (Array.isArray(err.response.data.detail)) {
+          const errors = err.response.data.detail.map((e: any) => e.msg).join(", ");
+          setError(`Validation error: ${errors}`);
+        } else {
+          setError(err.response.data.detail);
+        }
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to start analysis. Please try again.");
+      }
     }
   };
 
@@ -115,6 +175,11 @@ export default function AnalyzeRepo() {
     setError(null);
     setRepoUrl("");
     setTeamName("");
+    
+    // Clear localStorage
+    localStorage.removeItem("currentAnalysisJobId");
+    localStorage.removeItem("currentAnalysisRepoUrl");
+    localStorage.removeItem("currentAnalysisTeamName");
   };
 
   return (
@@ -133,10 +198,29 @@ export default function AnalyzeRepo() {
             Repository Details
           </CardTitle>
           <CardDescription>
-            Enter the GitHub repository URL and team name for evaluation
+            {isAnalyzing 
+              ? "Analysis in progress for the repository below"
+              : "Enter the GitHub repository URL and team name for evaluation"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isAnalyzing && (
+            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase">Repository</p>
+                  <p className="text-sm font-mono break-all">{repoUrl}</p>
+                </div>
+                {teamName && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase">Team Name</p>
+                    <p className="text-sm">{teamName}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="repoUrl">GitHub Repository URL</Label>
@@ -198,7 +282,15 @@ export default function AnalyzeRepo() {
             <CardTitle>Analysis Progress</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Progress value={stepProgress[step]} className="h-2" />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">
+                  {jobStatus?.current_stage ? jobStatus.current_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : stepMessages[step]}
+                </span>
+                <span className="text-muted-foreground">{jobStatus?.progress || stepProgress[step]}%</span>
+              </div>
+              <Progress value={jobStatus?.progress || stepProgress[step]} className="h-2" />
+            </div>
             <div className="space-y-3">
               {(["pending", "cloning", "analyzing", "scoring", "completed"] as AnalysisStep[]).map((s) => (
                 <div
