@@ -1,5 +1,5 @@
-import { LayoutDashboard, Users, FileText } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { LayoutDashboard, Users, FileText, LogOut } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,8 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { DEV_BYPASS_ENABLED } from "@/lib/auth/devBypass";
 
 const mentorNavItems = [
   {
@@ -36,7 +38,15 @@ const mentorNavItems = [
 
 export function MentorSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    if (!DEV_BYPASS_ENABLED) {
+      await signOut();
+    }
+    navigate("/", { replace: true });
+  };
 
   const userInitials = user?.email
     ? user.email.substring(0, 2).toUpperCase()
@@ -79,7 +89,7 @@ export function MentorSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
@@ -88,18 +98,22 @@ export function MentorSidebar() {
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-medium truncate max-w-[120px]">
-                {user?.email?.split("@")[0] || "Mentor"}
+                {DEV_BYPASS_ENABLED ? "Dev Mentor" : (user?.email?.split("@")[0] || "Mentor")}
               </span>
-              <button
-                onClick={signOut}
-                className="text-xs text-muted-foreground hover:text-foreground text-left"
-              >
-                Sign out
-              </button>
+              <span className="text-xs text-muted-foreground">Mentor</span>
             </div>
           </div>
           <ThemeToggle />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
