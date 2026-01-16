@@ -32,6 +32,7 @@ import AdminAssignments from "./pages/admin/AdminAssignments";
 import AdminMentorViewList from "./pages/admin/AdminMentorViewList";
 import AdminMentorViewPage from "./pages/admin/AdminMentorViewPage";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="batches" element={<AdminBatches />} />
                 <Route path="teams" element={<AdminTeams />} />
                 <Route path="mentors" element={<AdminMentors />} />
+                <Route path="users" element={<AdminUsers />} />
                 <Route path="assignments" element={<AdminAssignments />} />
                 <Route path="mentor-view" element={<AdminMentorViewList />} />
                 <Route path="mentor/:mentorId" element={<AdminMentorViewPage />} />

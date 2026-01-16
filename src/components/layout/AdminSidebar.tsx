@@ -6,6 +6,7 @@ import {
   GitBranch,
   Eye,
   FileText,
+  UserCheck,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -44,6 +45,11 @@ const adminNavItems = [
     title: "Mentors",
     url: "/admin/mentors",
     icon: UserCog,
+  },
+  {
+    title: "Users",
+    url: "/admin/users",
+    icon: UserCheck,
   },
   {
     title: "Assign Teams",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { handleRoleRedirect } from "@/lib/auth/roleRedirect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,10 +26,10 @@ export default function Login() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      navigate("/", { replace: true });
+    if (user && !loading) {
+      handleRoleRedirect(navigate);
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const validateInputs = (isSignUp: boolean) => {
     setError(null);
