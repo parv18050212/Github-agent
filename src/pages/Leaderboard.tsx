@@ -149,7 +149,7 @@ export default function Leaderboard() {
             Leaderboard
           </h1>
           <p className="text-muted-foreground mt-1 text-lg">
-            Rankings of all evaluated hackathon projects
+            Rankings of all evaluated projects
           </p>
         </div>
       </div>

@@ -33,8 +33,8 @@ export default function Settings() {
             <Input id="org" placeholder="Your organization" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="event">Hackathon Event Name</Label>
-            <Input id="event" placeholder="Hackathon 2024" />
+            <Label htmlFor="event">Event Name</Label>
+            <Input id="event" placeholder="Evaluation Batch 2024" />
           </div>
         </CardContent>
       </Card>

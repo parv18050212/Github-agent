@@ -73,7 +73,7 @@ export default function Dashboard() {
             HackEval
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 leading-relaxed">
-            AI-powered hackathon project evaluation system. Analyze GitHub repositories for 
+            AI-powered project evaluation system. Analyze GitHub repositories for 
             code quality, security, originality, and more.
           </p>
           <div className="flex flex-wrap gap-4">
