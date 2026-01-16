@@ -44,7 +44,7 @@ export default function LandingPage() {
             Hack<span className="text-primary">Score</span>
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-md mx-auto">
-            End-to-End Hackathon Evaluation Platform
+            End-to-End Project Evaluation Platform
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} HackScore. Built for hackathon excellence.</p>
+        <p>© {new Date().getFullYear()} HackScore. Built for project excellence.</p>
       </footer>
     </div>
   );

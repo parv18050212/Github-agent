@@ -1,4 +1,4 @@
-// Mock data for HackEval - Hackathon Project Evaluation System
+// Mock data for HackScore - Project Evaluation System
 
 export interface Contributor {
   name: string;
@@ -71,7 +71,7 @@ export const mockProjects: ProjectEvaluation[] = [
   {
     id: "proj-001",
     teamName: "CodeCrafters",
-    repoUrl: "https://github.com/codecrafters/hackathon-2024",
+    repoUrl: "https://github.com/codecrafters/project-2024",
     submittedAt: "2024-03-15T10:30:00Z",
     status: "completed",
     techStack: ["React", "TypeScript", "Node.js", "PostgreSQL"],

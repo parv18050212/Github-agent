@@ -21,7 +21,7 @@ export default function Documentation() {
         <CardContent className="prose prose-sm max-w-none text-muted-foreground">
           <h3 className="text-foreground">Overview</h3>
           <p>
-            HackEval is an AI-powered hackathon project evaluation system that analyzes 
+            HackScore is an AI-powered project evaluation system that analyzes 
             GitHub repositories to provide comprehensive assessments of code quality, 
             security, originality, and more.
           </p>

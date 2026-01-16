@@ -414,7 +414,7 @@ export default function BatchUpload() {
             <div className="bg-background rounded-lg p-4 font-mono text-sm">
               <div className="text-muted-foreground mb-2">teamName, repoUrl</div>
               <div>Team Alpha, https://github.com/alpha/project</div>
-              <div>Team Beta, https://github.com/beta/hackathon</div>
+              <div>Team Beta, https://github.com/beta/project</div>
             </div>
           </CardContent>
         </Card>
