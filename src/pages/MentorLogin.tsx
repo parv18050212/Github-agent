@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Users, Mail, Lock, AlertCircle, ArrowLeft, FlaskConical, ChevronDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -285,6 +286,39 @@ export default function MentorLogin() {
           <p className="text-center text-sm text-muted-foreground">
             By signing in, you agree to our Terms of Service
           </p>
+
+          {/* Dev-only Demo Credentials */}
+          {import.meta.env.DEV && (
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between border border-dashed border-amber-500/50 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600">
+                  <span className="flex items-center gap-2">
+                    <FlaskConical className="h-4 w-4" />
+                    Demo Credentials (Dev Only)
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 p-3 rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 space-y-3">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Email:</span> <code className="bg-muted px-1 rounded">mentor@hackscore.dev</code></p>
+                  <p><span className="text-muted-foreground">Password:</span> <code className="bg-muted px-1 rounded">mentor123456</code></p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setEmail("mentor@hackscore.dev");
+                    setPassword("mentor123456");
+                  }}
+                >
+                  Use Demo Credentials
+                </Button>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </CardContent>
       </Card>
     </div>
