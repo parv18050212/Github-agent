@@ -108,27 +108,29 @@ export default function Leaderboard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-warning" />
+      <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-warning/10">
+            <Trophy className="h-8 w-8 text-warning" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
-            <p className="text-muted-foreground mt-1">Loading rankings...</p>
+            <h1 className="text-4xl font-bold tracking-tight">Leaderboard</h1>
+            <p className="text-muted-foreground mt-1 text-lg">Loading rankings...</p>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="glass-card">
+            <Card key={i} className="rounded-2xl border-border/50">
               <CardContent className="pt-6">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-8 w-16" />
+                <div className="h-4 w-24 rounded bg-muted skeleton-shimmer mb-3" />
+                <div className="h-10 w-20 rounded bg-muted skeleton-shimmer" />
               </CardContent>
             </Card>
           ))}
         </div>
-        <Card className="glass-card">
-          <CardContent className="p-8 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-12 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </CardContent>
         </Card>
       </div>
@@ -136,12 +138,17 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Trophy className="h-8 w-8 text-warning" />
+    <div className="p-6 space-y-8 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="p-3 rounded-xl bg-warning/10">
+          <Trophy className="h-8 w-8 text-warning" />
+        </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Leaderboard
+          </h1>
+          <p className="text-muted-foreground mt-1 text-lg">
             Rankings of all evaluated hackathon projects
           </p>
         </div>
@@ -149,60 +156,54 @@ export default function Leaderboard() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="card-hover glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">Total Projects</span>
-            </div>
-            <div className="text-3xl font-bold">
-              <AnimatedNumber value={projects.length} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="card-hover glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="h-4 w-4 text-warning" />
-              <span className="text-sm text-muted-foreground">Highest Score</span>
-            </div>
-            <div className="text-3xl font-bold text-score-excellent">
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-warning/5 to-card/50">
+          <div className="absolute top-0 right-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-warning/20 blur-2xl" />
+          <CardContent className="pt-6 relative z-10">
+            <p className="text-sm font-medium text-muted-foreground mb-2">Highest Score</p>
+            <p className={cn("text-3xl font-bold tabular-nums", getScoreColor(highestScore))}>
               <AnimatedNumber value={highestScore} />
-            </div>
+            </p>
           </CardContent>
         </Card>
-        <Card className="card-hover glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-info" />
-              <span className="text-sm text-muted-foreground">Average Score</span>
-            </div>
-            <div className="text-3xl font-bold">
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-primary/5 to-card/50">
+          <div className="absolute top-0 right-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-primary/20 blur-2xl" />
+          <CardContent className="pt-6 relative z-10">
+            <p className="text-sm font-medium text-muted-foreground mb-2">Average Score</p>
+            <p className={cn("text-3xl font-bold tabular-nums", getScoreColor(averageScore))}>
               <AnimatedNumber value={averageScore} />
-            </div>
+            </p>
           </CardContent>
         </Card>
-        <Card className="card-hover glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-4 w-4 text-destructive" />
-              <span className="text-sm text-muted-foreground">Security Issues</span>
-            </div>
-            <div className="text-3xl font-bold text-destructive">
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-info/5 to-card/50">
+          <div className="absolute top-0 right-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-info/20 blur-2xl" />
+          <CardContent className="pt-6 relative z-10">
+            <p className="text-sm font-medium text-muted-foreground mb-2">Total Teams</p>
+            <p className="text-3xl font-bold text-foreground tabular-nums">
+              <AnimatedNumber value={projects.length} />
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-destructive/5 to-card/50">
+          <div className="absolute top-0 right-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-destructive/20 blur-2xl" />
+          <CardContent className="pt-6 relative z-10">
+            <p className="text-sm font-medium text-muted-foreground mb-2">Security Issues</p>
+            <p className="text-3xl font-bold text-destructive tabular-nums">
               <AnimatedNumber value={totalSecurityIssues} />
-            </div>
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Chart - Top 5 Comparison */}
       {filteredProjects.length > 0 && (
-        <Card className="glass-card overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Top 5 Score Comparison
-            </CardTitle>
+        <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-card to-card/50">
+          <CardHeader className="border-b border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-xl">Top 5 Score Comparison</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -247,24 +248,26 @@ export default function Leaderboard() {
       )}
 
       {/* Filters */}
-      <Card className="glass-card">
-        <CardContent className="pt-6">
+      <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-card to-card/50">
+        <CardContent className="pt-6 pb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Search teams or technologies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background/50"
+                className="pl-12 h-12 rounded-xl border-border/50 bg-background/50 text-base focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
             <Select value={techFilter} onValueChange={setTechFilter}>
-              <SelectTrigger className="w-full md:w-48 bg-background/50">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by tech" />
+              <SelectTrigger className="w-full md:w-56 h-12 rounded-xl border-border/50 bg-background/50">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <SelectValue placeholder="Filter by tech" />
+                </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Technologies</SelectItem>
                 {allTechStacks.map((tech) => (
                   <SelectItem key={tech} value={tech}>{tech}</SelectItem>
@@ -273,12 +276,12 @@ export default function Leaderboard() {
             </Select>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="gap-2">
+                <Button variant="destructive" className="gap-2 h-12 px-6 rounded-xl hover:shadow-lg transition-all">
                   <Trash2 className="h-4 w-4" />
                   Clear All
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="rounded-2xl">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -286,10 +289,10 @@ export default function Leaderboard() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={handleClearAll}
-                    className="bg-destructive hover:bg-destructive/90"
+                    className="bg-destructive hover:bg-destructive/90 rounded-xl"
                     disabled={clearAllMutation.isPending}
                   >
                     {clearAllMutation.isPending ? "Clearing..." : "Clear All Projects"}
@@ -302,137 +305,140 @@ export default function Leaderboard() {
       </Card>
 
       {/* Rankings Table */}
-      <Card className="glass-card overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-card to-card/50">
         <CardContent className="p-0">
           {filteredProjects.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              No projects found
+            <div className="p-12 text-center">
+              <Trophy className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">No projects found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableHead className="w-16">Rank</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Tech Stack</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 -ml-3 hover:bg-primary/10"
-                      onClick={() => toggleSort("totalScore")}
-                    >
-                      Total
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 -ml-3 hover:bg-primary/10"
-                      onClick={() => toggleSort("qualityScore")}
-                    >
-                      Quality
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 -ml-3 hover:bg-primary/10"
-                      onClick={() => toggleSort("securityScore")}
-                    >
-                      Security
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 -ml-3 hover:bg-primary/10"
-                      onClick={() => toggleSort("originalityScore")}
-                    >
-                      Originality
-                      <ArrowUpDown className="h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProjects.map((project, index) => (
-                  <TableRow 
-                    key={project.id} 
-                    className="hover:bg-muted/30 transition-colors stagger-item"
-                    style={{ animationDelay: `${index * 30}ms` }}
-                  >
-                    <TableCell>
-                      <div className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold",
-                        index === 0 && "rank-gold",
-                        index === 1 && "rank-silver",
-                        index === 2 && "rank-bronze",
-                        index > 2 && "bg-secondary text-secondary-foreground"
-                      )}>
-                        {index + 1}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Link 
-                        to={`/project/${project.id}`}
-                        className="font-medium hover:text-primary transition-colors"
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/50">
+                    <TableHead className="w-20 font-semibold">Rank</TableHead>
+                    <TableHead className="font-semibold">Team</TableHead>
+                    <TableHead className="font-semibold">Tech Stack</TableHead>
+                    <TableHead className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-2 hover:bg-primary/10 font-semibold"
+                        onClick={() => toggleSort("totalScore")}
                       >
-                        {project.teamName}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {project.techStack.slice(0, 3).map((tech) => (
-                          <TechBadge key={tech} tech={tech} className="text-xs" />
-                        ))}
-                        {project.techStack.length > 3 && (
-                          <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
-                            +{project.techStack.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={cn("font-bold tabular-nums", getScoreColor(project.totalScore))}>
-                          {project.totalScore}
-                        </span>
-                        <div className="h-2 w-16 overflow-hidden rounded-full bg-secondary hidden lg:block">
-                          <div
-                            className={cn("h-full rounded-full transition-all duration-500", getScoreBgColor(project.totalScore))}
-                            style={{ width: `${project.totalScore}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className={cn("tabular-nums", getScoreColor(project.qualityScore))}>
-                      {Math.round(project.qualityScore)}
-                    </TableCell>
-                    <TableCell className={cn("tabular-nums", getScoreColor(project.securityScore))}>
-                      {Math.round(project.securityScore)}
-                    </TableCell>
-                    <TableCell className={cn("tabular-nums", getScoreColor(project.originalityScore))}>
-                      {Math.round(project.originalityScore)}
-                    </TableCell>
-                    <TableCell>
-                      <Button asChild variant="ghost" size="icon" className="hover:bg-primary/10">
-                        <Link to={`/project/${project.id}`}>
-                          <ExternalLink className="h-4 w-4" />
-                        </Link>
+                        Total
+                        <ArrowUpDown className="h-3 w-3" />
                       </Button>
-                    </TableCell>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-2 hover:bg-primary/10 font-semibold"
+                        onClick={() => toggleSort("qualityScore")}
+                      >
+                        Quality
+                        <ArrowUpDown className="h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-2 hover:bg-primary/10 font-semibold"
+                        onClick={() => toggleSort("securityScore")}
+                      >
+                        Security
+                        <ArrowUpDown className="h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 -ml-2 hover:bg-primary/10 font-semibold"
+                        onClick={() => toggleSort("originalityScore")}
+                      >
+                        Originality
+                        <ArrowUpDown className="h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredProjects.map((project, index) => (
+                    <TableRow 
+                      key={project.id} 
+                      className="hover:bg-muted/20 transition-all border-b border-border/30 stagger-item group"
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <TableCell>
+                        <div className={cn(
+                          "flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold shadow-sm transition-transform group-hover:scale-110",
+                          index === 0 && "rank-gold",
+                          index === 1 && "rank-silver",
+                          index === 2 && "rank-bronze",
+                          index > 2 && "bg-secondary text-secondary-foreground"
+                        )}>
+                          {index + 1}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Link 
+                          to={`/project/${project.id}`}
+                          className="font-semibold text-base hover:text-primary transition-colors"
+                        >
+                          {project.teamName}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1.5">
+                          {project.techStack.slice(0, 3).map((tech) => (
+                            <TechBadge key={tech} tech={tech} className="text-xs" />
+                          ))}
+                          {project.techStack.length > 3 && (
+                            <span className="text-xs text-muted-foreground font-medium px-2.5 py-1 bg-muted/50 rounded-full border border-border/30">
+                              +{project.techStack.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-3">
+                          <span className={cn("text-2xl font-bold tabular-nums", getScoreColor(project.totalScore))}>
+                            {project.totalScore}
+                          </span>
+                          <div className="h-2 w-20 overflow-hidden rounded-full bg-secondary/50 hidden xl:block">
+                            <div
+                              className={cn("h-full rounded-full transition-all duration-500", getScoreBgColor(project.totalScore))}
+                              style={{ width: `${project.totalScore}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className={cn("tabular-nums text-center font-semibold text-base", getScoreColor(project.qualityScore))}>
+                        {Math.round(project.qualityScore)}
+                      </TableCell>
+                      <TableCell className={cn("tabular-nums text-center font-semibold text-base", getScoreColor(project.securityScore))}>
+                        {Math.round(project.securityScore)}
+                      </TableCell>
+                      <TableCell className={cn("tabular-nums text-center font-semibold text-base", getScoreColor(project.originalityScore))}>
+                        {Math.round(project.originalityScore)}
+                      </TableCell>
+                      <TableCell>
+                        <Button asChild variant="ghost" size="icon" className="hover:bg-primary/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link to={`/project/${project.id}`}>
+                            <ExternalLink className="h-5 w-5" />
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

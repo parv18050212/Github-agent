@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
+import { supabase } from "@/lib/supabaseClient";
 
 // API Configuration
 const isDevelopment = import.meta.env.DEV;
@@ -17,9 +18,18 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor for logging
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (DEBUG) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    }
+
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
     }
     return config;
   },

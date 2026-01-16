@@ -36,7 +36,7 @@ export function TechBadge({ tech, variant = "outline", className }: TechBadgePro
   return (
     <Badge
       variant={variant}
-      className={cn("font-medium", colorClass, className)}
+      className={cn("font-semibold rounded-lg px-2.5 py-0.5 transition-all hover:scale-105", colorClass, className)}
     >
       {tech}
     </Badge>

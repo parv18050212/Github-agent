@@ -183,47 +183,55 @@ export default function AnalyzeRepo() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analyze Repository</h1>
-        <p className="text-muted-foreground mt-2">
-          Submit a GitHub repository for AI-powered evaluation
+    <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+          Analyze Repository
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Submit a GitHub repository for comprehensive AI-powered evaluation
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5" />
-            Repository Details
-          </CardTitle>
-          <CardDescription>
-            {isAnalyzing 
-              ? "Analysis in progress for the repository below"
-              : "Enter the GitHub repository URL and team name for evaluation"
-            }
-          </CardDescription>
+      {/* Main Form Card */}
+      <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-card to-card/50">
+        <CardHeader className="border-b border-border/50 bg-gradient-to-br from-primary/5 to-transparent pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <GitBranch className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl">Repository Details</CardTitle>
+              <CardDescription className="text-base mt-1">
+                {isAnalyzing 
+                  ? "Analysis in progress for the repository below"
+                  : "Enter the GitHub repository URL and team name for evaluation"
+                }
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-8 pb-8">
           {isAnalyzing && (
-            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
-              <div className="space-y-2">
+            <div className="mb-8 p-6 rounded-xl bg-primary/5 border border-primary/20 backdrop-blur-sm">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Repository</p>
-                  <p className="text-sm font-mono break-all">{repoUrl}</p>
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Repository</p>
+                  <p className="text-sm font-mono text-foreground break-all bg-background/50 px-3 py-2 rounded-lg">{repoUrl}</p>
                 </div>
                 {teamName && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase">Team Name</p>
-                    <p className="text-sm">{teamName}</p>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Team Name</p>
+                    <p className="text-sm text-foreground bg-background/50 px-3 py-2 rounded-lg">{teamName}</p>
                   </div>
                 )}
               </div>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="repoUrl">GitHub Repository URL</Label>
+            <div className="space-y-3">
+              <Label htmlFor="repoUrl" className="text-base font-semibold">GitHub Repository URL</Label>
               <Input
                 id="repoUrl"
                 type="url"
@@ -231,12 +239,12 @@ export default function AnalyzeRepo() {
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 disabled={isAnalyzing}
-                className="font-mono"
+                className="font-mono h-12 text-base rounded-xl border-border/50 focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name</Label>
+            <div className="space-y-3">
+              <Label htmlFor="teamName" className="text-base font-semibold">Team Name</Label>
               <Input
                 id="teamName"
                 type="text"
@@ -244,29 +252,47 @@ export default function AnalyzeRepo() {
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
                 disabled={isAnalyzing}
+                className="h-12 text-base rounded-xl border-border/50 focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-destructive text-sm">
-                <AlertCircle className="h-4 w-4" />
-                {error}
+              <div className="flex items-center gap-3 p-4 text-destructive bg-destructive/10 border border-destructive/20 rounded-xl">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <span className="text-sm font-medium">{error}</span>
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1 gap-2" disabled={isAnalyzing}>
+            <div className="flex gap-3 pt-2">
+              <Button 
+                type="submit" 
+                className="flex-1 gap-2 h-12 text-base rounded-xl bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5" 
+                disabled={isAnalyzing}
+              >
                 {isAnalyzing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    {stepMessages[step]}
+                  </>
                 ) : step === "completed" ? (
-                  <CheckCircle className="h-4 w-4" />
+                  <>
+                    <CheckCircle className="h-5 w-5" />
+                    Completed
+                  </>
                 ) : (
-                  <Search className="h-4 w-4" />
+                  <>
+                    <Search className="h-5 w-5" />
+                    Start Analysis
+                  </>
                 )}
-                {step === "idle" ? "Start Analysis" : stepMessages[step]}
               </Button>
               {step === "failed" && (
-                <Button type="button" variant="outline" onClick={handleReset}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleReset}
+                  className="h-12 px-6 rounded-xl border-2 hover:bg-primary/5"
+                >
                   Try Again
                 </Button>
               )}
@@ -277,38 +303,51 @@ export default function AnalyzeRepo() {
 
       {/* Progress Section */}
       {step !== "idle" && step !== "failed" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Analysis Progress</CardTitle>
+        <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-card to-card/50">
+          <CardHeader className="border-b border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardTitle className="text-xl">Analysis Progress</CardTitle>
+            <CardDescription>Real-time progress tracking</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">
+          <CardContent className="pt-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-base">
                   {jobStatus?.current_stage ? jobStatus.current_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : stepMessages[step]}
                 </span>
-                <span className="text-muted-foreground">{jobStatus?.progress || stepProgress[step]}%</span>
+                <span className="text-2xl font-bold text-primary tabular-nums">{jobStatus?.progress || stepProgress[step]}%</span>
               </div>
-              <Progress value={jobStatus?.progress || stepProgress[step]} className="h-2" />
+              <Progress value={jobStatus?.progress || stepProgress[step]} className="h-3 rounded-full" />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2">
               {(["pending", "cloning", "analyzing", "scoring", "completed"] as AnalysisStep[]).map((s) => (
                 <div
                   key={s}
-                  className={`flex items-center gap-3 text-sm ${
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
+                    stepProgress[step] >= stepProgress[s]
+                      ? "bg-primary/5 border border-primary/20"
+                      : "bg-muted/30"
+                  }`}
+                >
+                  <div className="shrink-0">
+                    {stepProgress[step] >= stepProgress[s] ? (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-success-foreground">
+                        <CheckCircle className="h-5 w-5" />
+                      </div>
+                    ) : stepProgress[step] >= stepProgress[s] - 25 ? (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30" />
+                    )}
+                  </div>
+                  <span className={`font-medium ${
                     stepProgress[step] >= stepProgress[s]
                       ? "text-foreground"
                       : "text-muted-foreground"
-                  }`}
-                >
-                  {stepProgress[step] >= stepProgress[s] ? (
-                    <CheckCircle className="h-4 w-4 text-success" />
-                  ) : stepProgress[step] >= stepProgress[s] - 25 ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-muted" />
-                  )}
-                  {stepMessages[s]}
+                  }`}>
+                    {stepMessages[s]}
+                  </span>
                 </div>
               ))}
             </div>
@@ -317,30 +356,67 @@ export default function AnalyzeRepo() {
       )}
 
       {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-muted/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">What We Analyze</CardTitle>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-primary/5 to-card/50">
+          <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
+          <CardHeader className="pb-4 relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Search className="h-4 w-4" />
+              </div>
+              <CardTitle className="text-lg">What We Analyze</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <ul className="space-y-1">
-              <li>• Tech stack & architecture patterns</li>
-              <li>• Commit history & contributor stats</li>
-              <li>• Security vulnerabilities</li>
-              <li>• AI-generated code detection</li>
+          <CardContent className="relative z-10">
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Tech stack & architecture patterns</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Commit history & contributor statistics</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Security vulnerabilities & exposed secrets</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">AI-generated code detection</span>
+              </li>
             </ul>
           </CardContent>
         </Card>
-        <Card className="bg-muted/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Requirements</CardTitle>
+
+        <Card className="relative overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-info/5 to-card/50">
+          <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
+          <CardHeader className="pb-4 relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-info/10 text-info">
+                <AlertCircle className="h-4 w-4" />
+              </div>
+              <CardTitle className="text-lg">Requirements</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <ul className="space-y-1">
-              <li>• Public GitHub repository</li>
-              <li>• Valid repository URL</li>
-              <li>• Repository must be accessible</li>
-              <li>• Team name for identification</li>
+          <CardContent className="relative z-10">
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Public GitHub repository</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Valid repository URL</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Repository must be accessible</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Team name for identification</span>
+              </li>
             </ul>
           </CardContent>
         </Card>
