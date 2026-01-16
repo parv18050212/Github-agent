@@ -4,14 +4,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 
+type Role = "admin" | "mentor";
+
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: "admin" | "mentor" | "student";
+  requiredRole?: Role;
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<Role | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
@@ -22,11 +24,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
       }
 
       try {
-        const response = await apiClient.get("/api/auth/me");
+        const response = await apiClient.get<{ role: Role | null }>("/api/auth/me");
         setUserRole(response.data.role);
       } catch (error) {
         console.error("Failed to fetch user role:", error);
-        setUserRole("student"); // Default to student if fetch fails
+        setUserRole(null);
       } finally {
         setRoleLoading(false);
       }
@@ -46,12 +48,20 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     );
   }
 
+  // Not logged in - redirect to login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
+  // No valid role - redirect to login (students get kicked out)
+  if (!userRole) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Role mismatch - redirect to their correct dashboard
   if (requiredRole && userRole !== requiredRole) {
-    return <Navigate to="/" replace />;
+    const redirectPath = userRole === "admin" ? "/admin/dashboard" : "/mentor/dashboard";
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;
