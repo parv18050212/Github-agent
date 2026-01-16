@@ -25,7 +25,7 @@ export function getRoleRedirectPath(role: Role | null): string {
     case "mentor":
       return "/mentor/dashboard";
     default:
-      return "/login";
+      return "/";
   }
 }
 
@@ -33,9 +33,9 @@ export async function handleRoleRedirect(navigate: NavigateFunction): Promise<vo
   const role = await fetchUserRole();
   
   if (!role) {
-    // No valid role - sign out and redirect to login
+    // No valid role - sign out and redirect to landing page
     await supabase.auth.signOut();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
     return;
   }
   

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { handleRoleRedirect } from "@/lib/auth/roleRedirect";
+import { DEV_BYPASS_ENABLED } from "@/lib/auth/devBypass";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Shield, Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Mail, Lock, AlertCircle, ArrowLeft, Zap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { z } from "zod";
@@ -94,6 +95,18 @@ export default function AdminLogin() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Dev Bypass Button */}
+          {DEV_BYPASS_ENABLED && (
+            <Button
+              onClick={() => navigate("/admin/dashboard")}
+              className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white gap-2"
+              size="lg"
+            >
+              <Zap className="h-5 w-5" />
+              Enter as Admin (Dev Bypass)
+            </Button>
+          )}
+
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">

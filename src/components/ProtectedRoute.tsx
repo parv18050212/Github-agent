@@ -3,6 +3,8 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { DEV_BYPASS_ENABLED } from "@/lib/auth/devBypass";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Role = "admin" | "mentor";
 
@@ -17,6 +19,13 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
+    // Dev bypass: skip role fetching entirely
+    if (DEV_BYPASS_ENABLED) {
+      setUserRole(requiredRole || "admin");
+      setRoleLoading(false);
+      return;
+    }
+
     const fetchUserRole = async () => {
       if (!user) {
         setRoleLoading(false);
@@ -35,7 +44,21 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     };
 
     fetchUserRole();
-  }, [user]);
+  }, [user, requiredRole]);
+
+  // Dev bypass: skip all auth checks
+  if (DEV_BYPASS_ENABLED) {
+    return (
+      <>
+        <Alert className="rounded-none border-x-0 border-t-0 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+          <AlertDescription className="text-center text-sm font-medium">
+            🔧 DEV MODE: Authentication bypassed — Acting as {requiredRole || "admin"}
+          </AlertDescription>
+        </Alert>
+        {children}
+      </>
+    );
+  }
 
   if (authLoading || roleLoading) {
     return (
@@ -48,14 +71,14 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     );
   }
 
-  // Not logged in - redirect to login
+  // Not logged in - redirect to landing page
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  // No valid role - redirect to login (students get kicked out)
+  // No valid role - redirect to landing page (students get kicked out)
   if (!userRole) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Role mismatch - redirect to their correct dashboard
