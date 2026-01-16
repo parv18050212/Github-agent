@@ -7,6 +7,8 @@ interface AuthContextState {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   accessToken: string | null;
 }
@@ -20,20 +22,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const accessToken = useMemo(() => session?.access_token ?? null, [session]);
 
   useEffect(() => {
-    const init = async () => {
-      const { data, error } = await supabase.auth.getSession();
+    // Set up auth state listener FIRST
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      setLoading(false);
+    });
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data, error }) => {
       if (!error) {
         setSession(data.session);
         setUser(data.session?.user ?? null);
       }
-      setLoading(false);
-    };
-
-    init();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
       setLoading(false);
     });
 
@@ -56,6 +57,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -66,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     loading,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     signOut,
     accessToken,
   };
