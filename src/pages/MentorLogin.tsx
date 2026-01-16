@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Mail, Lock, AlertCircle } from "lucide-react";
+import { Loader2, Users, Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
-export default function Login() {
+export default function MentorLogin() {
   const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const navigate = useNavigate();
   
@@ -108,12 +108,21 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
       <Card className="w-full max-w-md border-border/50 shadow-2xl">
         <CardHeader className="space-y-3 text-center pb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="absolute top-4 left-4 gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
           <div className="mx-auto p-3 rounded-2xl bg-primary/10 text-primary w-fit">
-            <Shield className="h-10 w-10" />
+            <Users className="h-10 w-10" />
           </div>
-          <CardTitle className="text-3xl font-bold">Welcome to HackEval</CardTitle>
+          <CardTitle className="text-3xl font-bold">Mentor Portal</CardTitle>
           <CardDescription className="text-base">
-            Sign in to access your dashboard and manage projects
+            Sign in or create an account to evaluate projects
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
