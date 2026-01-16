@@ -24,6 +24,7 @@ import MentorDashboard from "./pages/mentor/MentorDashboard";
 import MentorTeams from "./pages/mentor/MentorTeams";
 import TeamDetails from "./pages/mentor/TeamDetails";
 import MentorReports from "./pages/mentor/MentorReports";
+import TeamAnalytics from "./pages/TeamAnalytics";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="dashboard" element={<MentorDashboard />} />
                 <Route path="teams" element={<MentorTeams />} />
                 <Route path="teams/:teamId" element={<TeamDetails />} />
+                <Route path="teams/:teamId/analytics" element={<TeamAnalytics />} />
                 <Route path="reports" element={<MentorReports />} />
                 <Route path="reports/:teamId" element={<MentorReports />} />
               </Route>
@@ -83,6 +85,7 @@ const App = () => (
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="batches" element={<AdminBatches />} />
                 <Route path="teams" element={<AdminTeams />} />
+                <Route path="teams/:teamId/analytics" element={<TeamAnalytics />} />
                 <Route path="mentors" element={<AdminMentors />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="assignments" element={<AdminAssignments />} />
