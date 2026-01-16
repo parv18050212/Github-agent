@@ -9,6 +9,8 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { useLocation } from "react-router-dom";
+import { BatchProvider } from "@/contexts/BatchContext";
+import { BatchSelector } from "@/components/admin/BatchSelector";
 
 const routeTitles: Record<string, string> = {
   "/admin/dashboard": "Dashboard",
@@ -28,30 +30,37 @@ export function AdminLayout() {
   if (!pageTitle) {
     if (location.pathname.startsWith("/admin/mentor/")) {
       pageTitle = "Viewing Mentor";
+    } else if (location.pathname.includes("/analytics")) {
+      pageTitle = "Team Analytics";
     } else {
       pageTitle = "Admin";
     }
   }
 
   return (
-    <SidebarProvider>
-      <AdminSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <BatchProvider>
+      <SidebarProvider>
+        <AdminSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+            <div className="ml-auto">
+              <BatchSelector />
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto p-6">
+            <Outlet />
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </BatchProvider>
   );
 }
