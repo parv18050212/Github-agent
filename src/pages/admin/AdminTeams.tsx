@@ -2,16 +2,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ExternalLink, CheckCircle, AlertTriangle, BarChart3 } from "lucide-react";
+import { Search, CheckCircle, AlertTriangle, BarChart3, GraduationCap } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useBatch } from "@/contexts/BatchContext";
 
-// Mock data
+// Mock data with batchId
 const mockTeams = [
-  { id: "1", name: "Team Alpha", mentor: "Dr. Smith", health: "on_track", batch: "Fall 2024" },
-  { id: "2", name: "Team Beta", mentor: "Prof. Johnson", health: "at_risk", batch: "Fall 2024" },
-  { id: "3", name: "Team Gamma", mentor: null, health: "critical", batch: "Fall 2024" },
-  { id: "4", name: "Team Delta", mentor: "Dr. Williams", health: "on_track", batch: "Fall 2024" },
+  { id: "1", name: "Team Alpha", mentor: "Dr. Smith", health: "on_track", batchId: "4th-sem-2024" },
+  { id: "2", name: "Team Beta", mentor: "Prof. Johnson", health: "at_risk", batchId: "4th-sem-2024" },
+  { id: "3", name: "Team Gamma", mentor: null, health: "critical", batchId: "4th-sem-2024" },
+  { id: "4", name: "Team Delta", mentor: "Dr. Williams", health: "on_track", batchId: "4th-sem-2024" },
+  { id: "5", name: "Team Epsilon", mentor: "Dr. Smith", health: "on_track", batchId: "6th-sem-2024" },
+  { id: "6", name: "Team Zeta", mentor: "Prof. Brown", health: "at_risk", batchId: "6th-sem-2024" },
+  { id: "7", name: "Team Eta", mentor: "Dr. Williams", health: "on_track", batchId: "6th-sem-2024" },
+  { id: "8", name: "Team Theta", mentor: null, health: "critical", batchId: "4th-sem-2023" },
+  { id: "9", name: "Team Iota", mentor: "Prof. Johnson", health: "on_track", batchId: "4th-sem-2023" },
+  { id: "10", name: "Team Kappa", mentor: "Dr. Smith", health: "on_track", batchId: "6th-sem-2023" },
 ];
 
 const healthConfig = {
@@ -23,16 +30,38 @@ const healthConfig = {
 export default function AdminTeams() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { selectedBatch } = useBatch();
 
-  const filteredTeams = mockTeams.filter((team) =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter teams by selected batch and search query
+  const filteredTeams = mockTeams
+    .filter((team) => selectedBatch ? team.batchId === selectedBatch.id : true)
+    .filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  if (!selectedBatch) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <GraduationCap className="h-16 w-16 text-muted-foreground" />
+        <h2 className="text-2xl font-semibold">No Batch Selected</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Please select a batch from the dropdown in the header to view teams.
+        </p>
+        <Button onClick={() => navigate("/admin/batches")}>
+          Go to Batches
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">All Teams</h1>
-        <p className="text-muted-foreground">View and manage all registered teams</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+          <Badge variant="secondary">{selectedBatch.semester} {selectedBatch.year}</Badge>
+        </div>
+        <p className="text-muted-foreground">
+          {filteredTeams.length} teams in {selectedBatch.name}
+        </p>
       </div>
 
       <div className="relative max-w-sm">
@@ -56,7 +85,6 @@ export default function AdminTeams() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg">{team.name}</CardTitle>
-                    <CardDescription>{team.batch}</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge
