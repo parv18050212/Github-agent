@@ -2,9 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ExternalLink, CheckCircle, AlertTriangle } from "lucide-react";
+import { Search, ExternalLink, CheckCircle, AlertTriangle, BarChart3 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // Mock data
 const mockTeams = [
@@ -22,6 +22,7 @@ const healthConfig = {
 
 export default function AdminTeams() {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const filteredTeams = mockTeams.filter((team) =>
     team.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -72,9 +73,20 @@ export default function AdminTeams() {
                 <div className="text-sm text-muted-foreground">
                   Mentor: {team.mentor || <span className="text-yellow-500">Unassigned</span>}
                 </div>
-                <Button variant="outline" size="sm">
-                  View Details
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1"
+                    onClick={() => navigate(`/admin/teams/${team.id}/analytics`)}
+                  >
+                    <BarChart3 className="h-3 w-3" />
+                    Analytics
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    View Details
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );

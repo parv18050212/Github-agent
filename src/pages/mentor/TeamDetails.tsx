@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, GitCommit, Users, Shield, FileCode, Star } from "lucide-react";
+import { ExternalLink, GitCommit, Users, Shield, FileCode, Star, BarChart3 } from "lucide-react";
 import { useState } from "react";
 
 // Mock data - will be replaced with useTeamDetails() hook
@@ -45,6 +45,7 @@ const mockTeamDetails = {
 
 export default function TeamDetails() {
   const { teamId } = useParams();
+  const navigate = useNavigate();
   const [vivaScore, setVivaScore] = useState("");
   const [comments, setComments] = useState("");
   const [recommendation, setRecommendation] = useState("");
@@ -69,12 +70,22 @@ export default function TeamDetails() {
             </a>
           </div>
         </div>
-        <div className="flex gap-2">
-          {team.techStack.map((tech) => (
-            <Badge key={tech} variant="secondary">
-              {tech}
-            </Badge>
-          ))}
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => navigate(`/mentor/teams/${teamId}/analytics`)}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Deep Analytics
+          </Button>
+          <div className="flex gap-2">
+            {team.techStack.map((tech) => (
+              <Badge key={tech} variant="secondary">
+                {tech}
+              </Badge>
+            ))}
+          </div>
         </div>
       </div>
 
